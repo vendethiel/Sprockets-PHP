@@ -88,6 +88,17 @@ class File
 	}
 	private function dependsOnDirective($name)
 	{ //allows to depend on a file, even if this one isn't included
+		$pipeline = Pipeline::getCurrentInstance();
+		
+		if (strpos($name, '.') === false)
+			$type = $this->type
+		else
+		{ //depending on another asset type. In example, //= depends_on image.png
+			$name_parts = explode('.', $name);
+			$type = $name_parts[1]; //"style" "css" *filters
+		}
+
+		$pipeline->addDependency($pipeline->getFile($name, $type));
 	}
 	
 	
