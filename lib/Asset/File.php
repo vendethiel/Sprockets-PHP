@@ -16,7 +16,7 @@ class File
 		$filename_parts = explode('.', $file);
 		$this->name = $filename_parts[0];
 		$this->type = $filename_parts[1];
-		$this->filters = array_slice($filename_parts, 2);
+		$this->filters = array_reverse(array_slice($filename_parts, 2)); //['less', 'php'] => ['php', 'less']
 		
 		$this->path_with_simple_filename = ('' === $this->directory ? '' : $this->directory . '/') . $this->name;
 		$this->filepath = $pipeline->getFile($this->path_with_simple_filename, $this->type);
@@ -104,6 +104,12 @@ class File
 	
 	static private function processFilters($path, $filters)
 	{
-		return file_get_contents($path);
+		$pipeline = Pipeline::getCurrentInstance();
+		$content = file_get_contents($path);
+		
+		foreach ($filters as $filter)
+			$content = $pipeline->applyFilter($content, $filter, $path);
+	
+		return $content
 	}
 }

@@ -3,7 +3,7 @@ namespace Asset;
 
 class Pipeline
 {
-	static private $current_instance;
+	static private $current_instance, $filters = array();
 	private $base_directories, $files, $directories, $processed_files = array(), $dependencies;
 	const DEPTH = -1;
 
@@ -166,5 +166,21 @@ class Pipeline
 			$hash[] = $dependency . ':' . filemtime($dependency);
 			
 		return implode("\n", $hash);
+	}
+	
+	public function applyFilter($content, $filter, $file)
+	{
+		$filter = $this->getFilter($filter);
+		$filter($content, $file);
+	}
+	private function getFilter($name)
+	{
+		if (!isset($this->filters[$name]))
+		{
+			$class = 'Filter\\' . $name;
+			$this->filters[$name] = new $class;
+		}
+		
+		return $this->filters[$name];
 	}
 }

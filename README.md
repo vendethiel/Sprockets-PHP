@@ -28,7 +28,7 @@ For example, in application.css
 //= depends_on layout
 ```
 If this file change, the whole stylesheet (and the dependencies) will be reloaded.
+
 ## Filters
-Filters are not supposed at this moment.
-The filters list to be included is : .sass, .scss, .coffee, .less
-Filters are gonna be PHP parsers and will not use backticks, thus allowing to be deployed anywhere.
+At this moment, only the filter ".coffee" is available.
+More are to be done !
