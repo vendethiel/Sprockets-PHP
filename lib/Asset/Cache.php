@@ -56,7 +56,7 @@ class Cache
 	}
 	private function write()
 	{
-		$pipeline = $this->pipeline; //__invoke won't work otherwise
+		$pipeline = $this->pipeline; //__invoke won't with "$this->pipeline()"
 	
 		$content = $pipeline($this->type);
 		$this->writeDependenciesFile();

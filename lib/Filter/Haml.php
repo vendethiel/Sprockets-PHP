@@ -17,9 +17,10 @@ class Haml extends Base
 
 	public function __invoke($content, $file, $vars)
 	{
-		if (!file_exists($path = $this->getCacheDir() . $file))
+		if (!file_exists($path = $this->getCacheDir($file, __CLASS__) . md5($content)))
 			file_put_contents($path, $this->getParser()->parseText($content));
 	
+		extract($vars);
 		ob_start();
 		include $path;
 		return ob_get_clean();

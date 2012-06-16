@@ -26,12 +26,14 @@ class Pipeline
 			throw new \RuntimeException('There is still a Pipeline instance running');
 		self::$current_instance = $this;
 		
-		if ($main_file)
+		if ($main_file) //this if is why $this->main_file_name is used for File::__construct() below
 			$this->main_file_name = $main_file;
 		
-		return (string) new File($main_file . '.' . $type, $vars);
+		$content = (string) new File($this->main_file_name . '.' . $type, $vars);
 		
 		self::$current_instance = null;
+		
+		return $content;
 	}
 	
 	public function getMainFile($type)
@@ -137,7 +139,7 @@ class Pipeline
 	public function applyFilter($content, $filter, $file, $vars)
 	{
 		$filter = $this->getFilter($filter);
-		$filter($content, $file, $vars);
+		return $filter($content, $file, $vars);
 	}
 	
 	private function getFilter($name)
