@@ -3,46 +3,52 @@ namespace Asset;
 
 class Pipeline
 {
-	static private $current_instance, $filters = array();
-	private $base_directories, $files, $directories, $processed_files = array(), $dependencies;
+	static private $current_instance,
+		$filters = array();
+	private $base_directories,
+		$files,
+		$directories,
+		$processed_files = array(),
+		$dependencies;
+		$main_file_name = 'application';
 	const DEPTH = -1;
 
 	public function __construct($base_directories)
 	{
-		$this->base_directories = $base_directories;
+		$this->base_directories = (array) $base_directories;
 		$this->listFilesAndDirectories();
-		
-	}
-
-	static public function getCurrentInstance()
-	{
-		if (!self::$current_instance)
-			throw new \RuntimeException('There is no Pipeline instance running');
-			
-		return self::$current_instance;
 	}
 
 	public function __invoke($type) { return $this->process($type); }
-	public function process($type)
+	public function process($type, $main_file = null)
 	{
 		if (self::$current_instance)
 			throw new \RuntimeException('There is still a Pipeline instance running');
 		self::$current_instance = $this;
 		
-		return (string) new File('application.' . $type);
+		if ($main_file)
+			$this->main_file_name = $main_file;
+		
+		return (string) new File($main_file . '.' . $type);
 		
 		self::$current_instance = null;
 	}
+	
 	public function getMainFile($type)
 	{
-		return $this->getFile('application', $type);
+		return $this->getFile($this->main_file_name, $type);
 	}
 	
+	public function getBaseDirectories()
+	{
+		return $this->base_directories;
+	}
 
 	public function hasFile($name, $type)
 	{
 		return isset($this->files[$type][$name]);
 	}
+	
 	public function getFile($name, $type)
 	{
 		if (isset($this->files[$type][$name]))
@@ -50,10 +56,12 @@ class Pipeline
 		
 		throw new Exception\FileNotFound($name, $type);
 	}
+	
 	public function hasDirectory($name)
 	{
 		return isset($this->directories[$name]);
 	}
+	
 	public function getDirectory($name)
 	{
 		if ('' === trim($name, '/.'))
@@ -64,6 +72,7 @@ class Pipeline
 		
 		throw new Exception\DirectoryNotFound($name);
 	}
+	
 	public function hasProcessedFile($file)
 	{
 		if (isset($this->processed_files[$file]))
@@ -99,6 +108,47 @@ class Pipeline
 		}
 
 		return $files;
+	}
+	
+	public function addDependency($path)
+	{
+		if (null === $this->dependencies)
+			$this->dependencies = array();
+		else if (!isset($this->dependencies[$path]))
+			//in order to not register the first file
+			$this->dependencies[$path] = true;
+	}
+	
+	public function getDependencies()
+	{
+		return array_keys($this->dependencies);
+	}
+	
+	public function getDependenciesFileContent()
+	{
+		$hash = array();
+		
+		foreach ($this->getDependencies() as $dependency)
+			$hash[] = $dependency . ':' . filemtime($dependency);
+			
+		return implode("\n", $hash);
+	}
+	
+	public function applyFilter($content, $filter, $file)
+	{
+		$filter = $this->getFilter($filter);
+		$filter($content, $file);
+	}
+	
+	private function getFilter($name)
+	{
+		if (!isset($this->filters[$name]))
+		{
+			$class = 'Filter\\' . $name;
+			$this->filters[$name] = new $class;
+		}
+		
+		return $this->filters[$name];
 	}
 
 	private function listFilesAndDirectories()
@@ -145,42 +195,12 @@ class Pipeline
 		$this->files = $files;
 		$this->directories = $directories;
 	}
-	
-	public function addDependency($path)
+
+	static public function getCurrentInstance()
 	{
-		if (null === $this->dependencies)
-			$this->dependencies = array();
-		else if (!isset($this->dependencies[$path]))
-			//in order to not register the first file
-			$this->dependencies[$path] = true;
-	}
-	public function getDependencies()
-	{
-		return array_keys($this->dependencies);
-	}
-	public function getDependenciesFileContent()
-	{
-		$hash = array();
-		
-		foreach ($this->getDependencies() as $dependency)
-			$hash[] = $dependency . ':' . filemtime($dependency);
+		if (!self::$current_instance)
+			throw new \RuntimeException('There is no Pipeline instance running');
 			
-		return implode("\n", $hash);
-	}
-	
-	public function applyFilter($content, $filter, $file)
-	{
-		$filter = $this->getFilter($filter);
-		$filter($content, $file);
-	}
-	private function getFilter($name)
-	{
-		if (!isset($this->filters[$name]))
-		{
-			$class = 'Filter\\' . $name;
-			$this->filters[$name] = new $class;
-		}
-		
-		return $this->filters[$name];
+		return self::$current_instance;
 	}
 }

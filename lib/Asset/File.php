@@ -27,11 +27,16 @@ class File
 	private function getProcessedContent()
 	{
 		$content = self::processFilters($this->filepath, $this->filters);
+		
+		if ($this->type != 'js' && $this->type != 'css')
+			return $content; //no directives
+		
 		$new_content = '';
 		
 		foreach (explode("\n", $content) as $line)
 		{
-			if (substr($line, 0, 3) == '//=' || substr($line, 0, 2) == '#=')
+			if ((($this->type == 'js' || $this->type == 'css') && substr($line, 0, 3) == '//=') ||
+			 ($this->type == 'js' && substr($line, 0, 2) == '#='))
 			{
 				$directive = explode(' ', trim(substr($line, 3)));
 				

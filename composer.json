@@ -4,7 +4,10 @@
     "autoload": {
         "psr-0": {
             "": "lib"
-        }
+        },
+		"classmap": [
+            "lib/vendor/Parser/"
+		]
     },
     "authors": [
         {
