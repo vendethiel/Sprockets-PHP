@@ -32,7 +32,7 @@ class File
 			return $content; //no directives
 		
 		$new_content = '';
-		
+
 		foreach (explode("\n", $content) as $line)
 		{
 			if ((($this->type == 'js' || $this->type == 'css') && substr($line, 0, 3) == '//=') ||
