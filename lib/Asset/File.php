@@ -3,9 +3,15 @@ namespace Asset;
 
 class File
 {
-	private $filepath, $path, $directory, $name, $type, $filters;
+	private $filepath,
+		$path,
+		$directory,
+		$name,
+		$type,
+		$filters,
+		$vars = array();
 
-	public function __construct($path)
+	public function __construct($path, $vars = array())
 	{
 		$pipeline = Pipeline::getCurrentInstance();
 	
@@ -16,17 +22,21 @@ class File
 		$filename_parts = explode('.', $file);
 		$this->name = $filename_parts[0];
 		$this->type = $filename_parts[1];
-		$this->filters = array_reverse(array_slice($filename_parts, 2)); //['less', 'php'] => ['php', 'less']
-		
+
 		$this->path_with_simple_filename = ('' === $this->directory ? '' : $this->directory . '/') . $this->name;
 		$this->filepath = $pipeline->getFile($this->path_with_simple_filename, $this->type);
+		
+		$full_filename = explode('/', $this->filepath);
+		$full_filename = end($full_filename);
+		$full_filename_parts = explode('.', $full_filename);
+		$this->filters = array_reverse(array_slice($full_filename_parts, 2)); //['less', 'php'] => ['php', 'less']
 
 		$pipeline->addDependency($this->filepath);
 	}
 	
 	private function getProcessedContent()
 	{
-		$content = self::processFilters($this->filepath, $this->filters);
+		$content = self::processFilters($this->filepath, $this->filters, $this->vars);
 		
 		if ($this->type != 'js' && $this->type != 'css')
 			return $content; //no directives
@@ -96,7 +106,7 @@ class File
 		$pipeline = Pipeline::getCurrentInstance();
 		
 		if (strpos($name, '.') === false)
-			$type = $this->type
+			$type = $this->type;
 		else
 		{ //depending on another asset type. In example, //= depends_on image.png
 			$name_parts = explode('.', $name);
@@ -107,14 +117,14 @@ class File
 	}
 	
 	
-	static private function processFilters($path, $filters)
+	static private function processFilters($path, $filters, $vars)
 	{
 		$pipeline = Pipeline::getCurrentInstance();
 		$content = file_get_contents($path);
 		
 		foreach ($filters as $filter)
-			$content = $pipeline->applyFilter($content, $filter, $path);
+			$content = $pipeline->applyFilter($content, $filter, $path, $vars);
 	
-		return $content
+		return $content;
 	}
 }

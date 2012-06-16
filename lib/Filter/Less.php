@@ -18,7 +18,7 @@ class Less implements iFilter
 			$this->parser->addImportDir($dir);
 	}
 	
-	public function __invoke($content, $file)
+	public function __invoke($content, $file, $vars)
 	{
 		return $this->getParser()->parse($content);
 	}

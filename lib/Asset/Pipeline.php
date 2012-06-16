@@ -9,7 +9,7 @@ class Pipeline
 		$files,
 		$directories,
 		$processed_files = array(),
-		$dependencies;
+		$dependencies,
 		$main_file_name = 'application';
 	const DEPTH = -1;
 
@@ -19,8 +19,8 @@ class Pipeline
 		$this->listFilesAndDirectories();
 	}
 
-	public function __invoke($type) { return $this->process($type); }
-	public function process($type, $main_file = null)
+	public function __invoke($t,$m=null,$v=array()){return $this->process($t,$m,$v);}
+	public function process($type, $main_file = null, $vars = array())
 	{
 		if (self::$current_instance)
 			throw new \RuntimeException('There is still a Pipeline instance running');
@@ -29,7 +29,7 @@ class Pipeline
 		if ($main_file)
 			$this->main_file_name = $main_file;
 		
-		return (string) new File($main_file . '.' . $type);
+		return (string) new File($main_file . '.' . $type, $vars);
 		
 		self::$current_instance = null;
 	}
@@ -134,21 +134,21 @@ class Pipeline
 		return implode("\n", $hash);
 	}
 	
-	public function applyFilter($content, $filter, $file)
+	public function applyFilter($content, $filter, $file, $vars)
 	{
 		$filter = $this->getFilter($filter);
-		$filter($content, $file);
+		$filter($content, $file, $vars);
 	}
 	
 	private function getFilter($name)
 	{
-		if (!isset($this->filters[$name]))
+		if (!isset(self::$filters[$name]))
 		{
-			$class = 'Filter\\' . $name;
-			$this->filters[$name] = new $class;
+			$class = 'Filter\\' . ucfirst($name);
+			self::$filters[$name] = new $class;
 		}
 		
-		return $this->filters[$name];
+		return self::$filters[$name];
 	}
 
 	private function listFilesAndDirectories()

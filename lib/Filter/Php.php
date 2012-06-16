@@ -6,8 +6,10 @@ namespace Filter;
  */
 class Php extends Base
 {
-	public function __invoke($content, $file)
+	public function __invoke($content, $file, $vars)
 	{ //just plain bad :-)
+		extract($vars);
+	
 		eval($content);
 	}
 }

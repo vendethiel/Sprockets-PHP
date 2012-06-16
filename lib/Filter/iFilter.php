@@ -1,7 +1,7 @@
 <?php
-namespace Filter
+namespace Filter;
 
 interface iFilter
 {
-	public function __invoke($content, $file);
+	public function __invoke($content, $file, $vars);
 }

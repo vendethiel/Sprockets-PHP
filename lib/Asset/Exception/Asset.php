@@ -1,6 +1,6 @@
 <?php
-namespace Asset\Pipeline;
+namespace Asset\Exception;
 
-class Asset extends Exception
+class Asset extends \Exception
 {
 }

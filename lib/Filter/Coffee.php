@@ -16,7 +16,7 @@ class Coffee implements iFilter
 		error_reporting($previous_error_reporting);
 	}
 
-	public function __invoke($content, $file)
+	public function __invoke($content, $file, $vars)
 	{
 		\CoffeeScript\Compiler::compile($content, array('file' => $file));
 	}

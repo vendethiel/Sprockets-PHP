@@ -1,5 +1,5 @@
 <?php
-namespace Asset\Pipeline;
+namespace Asset\Exception;
 
 class DirectoryNotFound extends AssetNotFound
 {
