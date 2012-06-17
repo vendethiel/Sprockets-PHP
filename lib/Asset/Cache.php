@@ -5,10 +5,11 @@ class Cache
 {
 	private $pipeline, $type, $options, $hash, $processed = false;
 
-	public function __construct($pipeline, $type, array $options = array())
+	public function __construct($pipeline, $type, $vars = array(), array $options = array())
 	{
 		$this->pipeline = $pipeline;
 		$this->type = $type;
+		$this->vars = $vars;
 		$this->options = array_merge(array(
 			'cache_directory' => 'cache/',
 		), $options);
@@ -23,7 +24,7 @@ class Cache
 		if (!$this->hash)
 			throw new \RuntimeException('Cache::getFilename has been called before dependencies were resolved');
 	
-		return str_replace('dependencies', 'file_' . $this->hash, $this->getDependenciesFilename());
+		return str_replace('dependencies', 'file_' . $this->hash, $this->getDependenciesFilename()) . '.' . $this->type;
 	}
 	
 	private function isFresh()
@@ -58,7 +59,7 @@ class Cache
 	{
 		$pipeline = $this->pipeline; //__invoke won't with "$this->pipeline()"
 	
-		$content = $pipeline($this->type);
+		$content = $pipeline($this->type, null, $this->vars);
 		$this->writeDependenciesFile();
 		file_put_contents($this->getFilename(), $content);
 	}

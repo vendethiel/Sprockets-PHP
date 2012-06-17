@@ -6,18 +6,15 @@ namespace Filter;
  */
 class Coffee implements iFilter
 {
-	public function __construct()
+	public function __invoke($content, $file, $vars)
 	{
 		$previous_error_reporting = error_reporting();
 		error_reporting(E_ALL);
-		
-		\CoffeeScript\Compiler::compile(''); //force class loading
+	
+		$script = \CoffeeScript\Compiler::compile($content, array('file' => $file));
 		
 		error_reporting($previous_error_reporting);
-	}
-
-	public function __invoke($content, $file, $vars)
-	{
-		\CoffeeScript\Compiler::compile($content, array('file' => $file));
+		
+		return $script;
 	}
 }

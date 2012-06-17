@@ -18,8 +18,12 @@ class File
 		$this->path = $path;
 		$this->directory = '.' === ($dirname = dirname($path)) ? '' : $dirname;
 		
+		$this->vars = $vars;
+		
 		$file = basename($path);
 		$filename_parts = explode('.', $file);
+		if (!isset($filename_parts[1]))
+			vdump($path);
 		$this->name = $filename_parts[0];
 		$this->type = $filename_parts[1];
 
@@ -31,12 +35,22 @@ class File
 		$full_filename_parts = explode('.', $full_filename);
 		$this->filters = array_reverse(array_slice($full_filename_parts, 2)); //['less', 'php'] => ['php', 'less']
 
-		$pipeline->addDependency($this->filepath);
+		if (in_array($this->type, array('html', 'css', 'js')))
+			$pipeline->addDependency($this->filepath);
+	}
+	
+	public function getFilepath()
+	{
+		return $this->filepath;
 	}
 	
 	private function getProcessedContent()
 	{
-		$content = self::processFilters($this->filepath, $this->filters, $this->vars);
+		$filters = $this->filters;
+		if (class_exists('Filter\\' . ucfirst($this->type)))
+			$filters[] = $this->type;
+		
+		$content = self::processFilters($this->filepath, $filters, $this->vars);
 		
 		if ($this->type != 'js' && $this->type != 'css')
 			return $content; //no directives
@@ -75,9 +89,9 @@ class File
 		try {
 			return $this->process();
 		} catch (Exception\Asset $e) {
-			exit('Asset exception : ' . $e->getMessage());
+			exit('Asset exception (' . $this->getFilepath() . ') : ' . $e->getMessage());
 		} catch (\Exception $e) {
-			exit('External exception : ' . $e->getMessage());
+			exit('External exception (' . $this->getFilepath() . ') : ' . $e->getMessage());
 		}
 	}
 	
@@ -87,19 +101,19 @@ class File
 		$pipeline = Pipeline::getCurrentInstance();
 
 		if ($pipeline->hasFile($file = $this->directory . $name, $this->type))
-			return (string) new File($file . '.' . $this->type);
+			return (string) new File($file . '.' . $this->type, $this->vars);
 		else if ($pipeline->hasFile($file = $this->directory . $name . '/index', $this->type))
-			return (string) new File($file . '.' . $this->type);
+			return (string) new File($file . '.' . $this->type, $this->vars);
 		else
 			throw new Exception\FileNotFound($file, $type);
 	}
 	private function requireTreeDirective($name = '/')
 	{
-		return (string) new Tree($this->directory . $name, $this->type);
+		return (string) new Tree($this->directory . $name, $this->type, $this->vars);
 	}
 	private function requireDirectoryDirective($name = '/')
 	{
-		return (string) new Directory($this->directory . $name, $this->type);
+		return (string) new Directory($this->directory . $name, $this->type, $this->vars);
 	}
 	private function dependsOnDirective($name)
 	{ //allows to depend on a file, even if this one isn't included

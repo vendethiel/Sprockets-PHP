@@ -3,13 +3,14 @@ namespace Asset;
 
 class Tree
 {
-	private $name;
+	private $name, $type, $path, $vars = array();
 	const DEPTH = -1;
 
-	public function __construct($name, $type)
+	public function __construct($name, $type, $vars)
 	{
 		$this->name = $name;
 		$this->type = $type;
+		$this->vars = $vars;
 		$this->path = Pipeline::getCurrentInstance()->getDirectory($name);
 	}
 	
@@ -25,9 +26,7 @@ class Tree
 
 		//create an instance of File in order to parse other dependencies
 		foreach ($this->getFilesList() as $file)
-		{
-			$content .= (string) new File($file . '.' . $this->type);
-		}
+			$content .= (string) new File($file . '.' . $this->type, $this->vars);
 		
 		return $content;
 	}

@@ -11,7 +11,7 @@ class Pipeline
 		$processed_files = array(),
 		$dependencies,
 		$main_file_name = 'application';
-	const DEPTH = -1;
+	const DEPTH = 3;
 
 	public function __construct($base_directories)
 	{
@@ -155,43 +155,58 @@ class Pipeline
 
 	private function listFilesAndDirectories()
 	{
-		$files = array();
-		$directories = array();
+		$cache_directory = dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR . '__cache/';
+		$cache = $cache_directory . 'ls_' . md5(implode("\n", $this->base_directories)) . '.php';
 		
-		$flags = \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS;
-		foreach ($this->base_directories as $base_directory)
+		if (file_exists($cache))
 		{
-			$base_directory_length = strlen($base_directory);
-
-			$it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base_directory . '/', $flags),
-			 \RecursiveIteratorIterator::CHILD_FIRST); //include directories
-			if (self::DEPTH != -1)
-				$it->setMaxDepth(self::DEPTH);
-
-			while ($it->valid())
+			list($files, $directories) = include $cache;
+		}
+		else
+		{
+			$files = array();
+			$directories = array();
+			
+			$flags = \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS;
+			foreach ($this->base_directories as $base_directory)
 			{
-				if ($it->isLink())
+				$base_directory_length = strlen($base_directory);
+
+				$it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base_directory . '/', $flags),
+				 \RecursiveIteratorIterator::CHILD_FIRST); //include directories
+				if (self::DEPTH != -1)
+					$it->setMaxDepth(self::DEPTH);
+
+				while ($it->valid())
 				{
+					if ($it->isLink())
+					{
+						$it->next();
+						continue;
+					}
+
+					$name = ltrim(substr($it->key(), $base_directory_length), '/');
+					$path = $base_directory . '/' . $name;
+
+					if ($it->isDir())
+						$directories[$name] = $path;
+					else
+					{
+						$name_parts = explode('.', $name);
+						$name = $name_parts[0];
+						$type = $name_parts[1];
+
+						$files[$type][$name] = $path;
+					}
+
 					$it->next();
-					continue;
 				}
-
-				$name = ltrim(substr($it->key(), $base_directory_length), '/');
-				$path = $base_directory . '/' . $name;
-
-				if ($it->isDir())
-					$directories[$name] = $path;
-				else
-				{
-					$name_parts = explode('.', $name);
-					$name = $name_parts[0];
-					$type = $name_parts[1];
-
-					$files[$type][$name] = $path;
-				}
-
-				$it->next();
 			}
+			
+			file_put_contents($cache, '<?php return ' . var_export(array(
+				$files,
+				$directories
+			), true) . ';');
 		}
 		
 		$this->files = $files;

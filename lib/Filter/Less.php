@@ -16,6 +16,8 @@ class Less implements iFilter
 
 		foreach (Pipeline::getCurrentInstance()->getBaseDirectories() as $dir)
 			$this->parser->addImportDir($dir);
+		
+		return $this->parser;
 	}
 	
 	public function __invoke($content, $file, $vars)
