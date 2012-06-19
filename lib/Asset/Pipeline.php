@@ -156,6 +156,8 @@ class Pipeline
 	private function listFilesAndDirectories()
 	{
 		$cache_directory = dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR . '__cache/';
+		if (!file_exists($cache_directory))
+			mkdir($cache_directory);
 		$cache = $cache_directory . 'ls_' . md5(implode("\n", $this->base_directories)) . '.php';
 		
 		if (file_exists($cache))

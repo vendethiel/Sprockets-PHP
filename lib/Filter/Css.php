@@ -8,7 +8,7 @@ class Css implements iFilter
 		return preg_replace_callback('`url\([\'"]?([a-zA-Z0-9/\._-]+)[\'"]?\)`', function ($match)
 		{
 			$file = new \Asset\File($match[1]);
-			return 'url(' . $file->getFilepath() . ');';
+			return 'url(../' . $file->getFilepath() . ');';
 		}, $content);
 	}
 }
