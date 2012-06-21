@@ -13,9 +13,11 @@ class File
 
 	public function __construct($path, $vars = array())
 	{
+		if ($path == '\\/application.js')
+			d_p_b();
 		$pipeline = Pipeline::getCurrentInstance();
 	
-		$this->path = $path;
+		$this->path = trim($path, '/\\');
 		$this->directory = '.' === ($dirname = dirname($path)) ? '' : $dirname;
 		
 		$this->vars = $vars;
@@ -23,7 +25,7 @@ class File
 		$file = basename($path);
 		$filename_parts = explode('.', $file);
 		if (!isset($filename_parts[1]))
-			vdump($path);
+			vdump($path, 'no filename parts 1');
 		$this->name = $filename_parts[0];
 		$this->type = $filename_parts[1];
 
@@ -51,7 +53,8 @@ class File
 			$filters[] = $this->type;
 		
 		$content = self::processFilters($this->filepath, $filters, $this->vars);
-		
+
+
 		if ($this->type != 'js' && $this->type != 'css')
 			return $content; //no directives
 		
@@ -79,7 +82,7 @@ class File
 	public function process()
 	{
 		if (Pipeline::getCurrentInstance()->hasProcessedFile($this->filepath))
-			return; //hasProcessedFile will add it otherwise
+			return ' '; //hasProcessedFile will add it otherwise
 
 		return $this->getProcessedContent();
 	}
@@ -87,7 +90,10 @@ class File
 	public function __toString()
 	{
 		try {
-			return $this->process();
+			$e= $this->process();
+			if (empty($e) || !is_string($e))
+				vdump($e, $this->getFilepath(), file_get_contents($this->getFilepath()));
+			return $e;
 		} catch (Exception\Asset $e) {
 			exit('Asset exception (' . $this->getFilepath() . ') : ' . $e->getMessage());
 		} catch (\Exception $e) {

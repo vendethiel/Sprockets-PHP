@@ -6,17 +6,46 @@ class Pipeline
 	static private $current_instance,
 		$filters = array();
 	private $base_directories,
-		$files,
-		$directories,
-		$processed_files = array(),
 		$dependencies,
+		$files = array(),
+		$file_added = false,
+		$processed_files = array(),
 		$main_file_name = 'application';
 	const DEPTH = 3;
 
 	public function __construct($base_directories)
 	{
 		$this->base_directories = (array) $base_directories;
-		$this->listFilesAndDirectories();
+		$this->readCache();
+	}
+	
+	static public function getCacheDirectory()
+	{
+		//../../cache/
+		$directory = dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'cache/';
+		
+		if (!file_exists($directory))
+			mkdir($directory);
+		
+		return $directory;
+	}
+	
+	private function getFileListCache()
+	{
+		$directories_hash = md5(implode(';', $this->base_directories));
+		return self::getCacheDirectory() . 'file_list_' . $directories_hash . '.php';
+	}
+	
+	public function readCache()
+	{
+		if (file_exists($file = $this->getFileListCache()))
+			$this->files = include $file;
+	}
+
+	public function __destruct()
+	{
+		if ($this->file_added)
+			file_put_contents($this->getFileListCache(), '<?php return ' . var_export($this->files, true) . ';');
 	}
 
 	public function __invoke($t,$m=null,$v=array()){return $this->process($t,$m,$v);}
@@ -48,15 +77,99 @@ class Pipeline
 
 	public function hasFile($name, $type)
 	{
-		return isset($this->files[$type][$name]);
+		return !!$this->findFile($name, $type);
 	}
 	
 	public function getFile($name, $type)
 	{
-		if (isset($this->files[$type][$name]))
-			return $this->files[$type][$name];
+		if ($file = $this->findFile($name, $type))
+			return $file;
 		
 		throw new Exception\FileNotFound($name, $type);
+	}
+	
+	public function getFilesUnder($directory, $type, $depth = -1)
+	{
+		$files = array();
+		
+		$directory = '/' . trim($directory, './') . '/';
+		
+		foreach ($this->base_directories as $base_directory)
+		{
+			$directory_length = strlen($base_directory) + 1; //+1 for '/'
+		
+			$directory_files = glob($base_directory . $directory . '*');
+			$found = false;
+			$directories = array();
+			foreach ($directory_files as $path)
+			{
+				if (isset($this->processed_files[$path]))
+					continue;
+			
+				$canonical_path = trim(substr($path, $directory_length), '/\\');
+				if ($canonical_path[0] == '.')
+					continue; //skip that!
+				
+				if (is_dir($path))
+				{
+					if ($depth == 0)
+						continue;
+
+					$directories[] = $canonical_path;
+				}
+				else
+				{
+					list($canonical, $extension) = explode('.', basename($canonical_path));
+					if ($extension != $type)
+						continue;
+					
+					$canonical_dir = trim(dirname($canonical_path), '/'.DIRECTORY_SEPARATOR);
+					$canonical = trim($canonical, '/'.DIRECTORY_SEPARATOR);
+					$full_path = $canonical_dir . '/' . $canonical;
+					
+					if (isset($this->processed_files[$full_path]))
+						continue;
+
+					$this->processed_files[$full_path] = true;
+					$found = true;
+					$files[] = $full_path;
+				}
+			}
+			if ($directories && $found && ($depth - 1))
+			{ //$depth is either -1 or >0
+			//$found: if we have a file with this extension in the directory.
+			//		Else, there's no point in continuing
+			//		you may need to add a file with the type to tell Sprockets-PHP to keep looking
+				foreach ($directories as $directory)
+				{
+					$files_under = $this->getFilesUnder($directory, $type, -1 == $depth ? -1 : $depth - 1);
+					$files = array_merge($files, $files_under);
+				}
+			}
+		}
+		
+		return $files;
+	}
+	
+	private function findFile($name, $type)
+	{
+		if (isset($this->files[$type][$name]))
+			return $this->files[$type][$name];
+	
+		foreach ($this->base_directories as $base_directory)
+		{
+			$files = glob($base_directory . substr('/' . $name . '.' . $type, 0, -1) . '*');
+			
+			if ($files)
+			{
+				$this->files[$type][$name] = $files[0];
+				$this->file_added = true;
+
+				return $files[0];
+			}
+		}
+		
+		return null;
 	}
 	
 	public function hasDirectory($name)
@@ -66,11 +179,16 @@ class Pipeline
 	
 	public function getDirectory($name)
 	{
-		if ('' === trim($name, '/.'))
+		if ('' === $name = '/' . trim($name, '/.') . '/')
 			return true;
 
-		if (isset($this->directories[$name]))
-			return $this->directories[$name];
+		foreach ($this->base_directories as $base_directory)
+		{
+			$directory = $base_directory . $name;
+
+			if (file_exists($directory) && is_dir($directory))
+				return $directory;
+		}
 		
 		throw new Exception\DirectoryNotFound($name);
 	}
@@ -81,35 +199,6 @@ class Pipeline
 			return true;
 
 		$this->processed_files[$file] = true;
-	}
-	
-	public function getFilesUnder($directory, $type, $depth_limit = -1)
-	{
-		$files = array();
-
-		if ($directory == '.')
-			$directory = '';
-		$directory_length = strlen($directory);
-
-		foreach ($this->files[$type] as $name => $path)
-		{
-			if (isset($this->processed_files[$path]))
-				continue;
-
-			if (substr($name, 0, $directory_length) == $directory)
-			{ //it starts with the right directory
-				$relative_path = trim(substr($name, $directory_length), '/');
-				$depth = count(explode('/', $relative_path));
-				
-				if (-1 != $depth_limit && $depth > $depth_limit)
-					//it's not too far
-					continue;
-
-				$files[] = $name;
-			}
-		}
-
-		return $files;
 	}
 	
 	public function addDependency($path)
@@ -151,68 +240,6 @@ class Pipeline
 		}
 		
 		return self::$filters[$name];
-	}
-
-	private function listFilesAndDirectories()
-	{
-		$cache_directory = dirname(dirname(dirname(dirname(__DIR__)))) . DIRECTORY_SEPARATOR . '__cache/';
-		if (!file_exists($cache_directory))
-			mkdir($cache_directory);
-		$cache = $cache_directory . 'ls_' . md5(implode("\n", $this->base_directories)) . '.php';
-		
-		if (file_exists($cache))
-		{
-			list($files, $directories) = include $cache;
-		}
-		else
-		{
-			$files = array();
-			$directories = array();
-			
-			$flags = \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS;
-			foreach ($this->base_directories as $base_directory)
-			{
-				$base_directory_length = strlen($base_directory);
-
-				$it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base_directory . '/', $flags),
-				 \RecursiveIteratorIterator::CHILD_FIRST); //include directories
-				if (self::DEPTH != -1)
-					$it->setMaxDepth(self::DEPTH);
-
-				while ($it->valid())
-				{
-					if ($it->isLink())
-					{
-						$it->next();
-						continue;
-					}
-
-					$name = ltrim(substr($it->key(), $base_directory_length), '/');
-					$path = $base_directory . '/' . $name;
-
-					if ($it->isDir())
-						$directories[$name] = $path;
-					else
-					{
-						$name_parts = explode('.', $name);
-						$name = $name_parts[0];
-						$type = $name_parts[1];
-
-						$files[$type][$name] = $path;
-					}
-
-					$it->next();
-				}
-			}
-			
-			file_put_contents($cache, '<?php return ' . var_export(array(
-				$files,
-				$directories
-			), true) . ';');
-		}
-		
-		$this->files = $files;
-		$this->directories = $directories;
 	}
 
 	static public function getCurrentInstance()
