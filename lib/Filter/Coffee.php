@@ -9,7 +9,7 @@ class Coffee implements iFilter
 	public function __invoke($content, $file, $vars)
 	{
 		$previous_error_reporting = error_reporting();
-		error_reporting(E_ALL);
+		error_reporting(E_ERROR);
 	
 		$script = \CoffeeScript\Compiler::compile($content, array('file' => $file));
 		
