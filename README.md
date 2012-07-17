@@ -2,13 +2,34 @@
 
 This is a port of Sprockets (Rails Asset Pipeline) for PHP.
 
-You have to create an instance of Asset\Pipeline.
+You have to create an instance of `Asset\Pipeline`.
 The argument is the array of "base paths" from where the Pipeline has to search files.
 
 If you want to call directly the Pipeline, you can then do `$pipeline($asset_type)`.
 For example `$pipeline('css');`.
 The CMS will load `application.css` in one of the base paths.
 This file must contain "directives", like Sprockets's one.
+
+```php
+<?php
+//require your autoloader
+
+//create a pipeline with 2 directories
+$pipeline = new Asset\Pipeline(array('app/assets/javascripts', 'app/assets/stylesheets'));
+
+//will look for 'app/assets/javascripts/application.css' then 'app/assets/stylesheets/application.css'
+echo $pipeline('css');
+
+//will look for 'app/assets/javascripts/layout.css' then 'app/assets/stylesheets/layout.css'
+echo $pipeline('css', 'layout');
+
+$cache = new \Asset\Cache($pipeline, 'css'); //same as the first example, but will cache it
+$content = $cache->getContent();
+$filename = (string) $cache;
+//or
+$filename = $cache->getFilename();
+```
+
 ## Directives Syntax
 There are two supported syntaxs at this moment : `//=` and `#=`.
 ## Supported Directives

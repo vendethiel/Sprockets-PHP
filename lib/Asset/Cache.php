@@ -19,6 +19,7 @@ class Cache
 	{
 		return $this->options['cache_directory'] . 'dependencies_' . $this->type . '.txt';
 	}
+    
 	private function getFilename()
 	{
 		if (!$this->hash)
@@ -55,6 +56,7 @@ class Cache
 		//this file_exists call will allow auto-refresh of the file if the naming strategy has changed
 		return file_exists($this->getFilename());
 	}
+    
 	private function write()
 	{
 		$pipeline = $this->pipeline; //__invoke won't with "$this->pipeline()"
@@ -63,6 +65,7 @@ class Cache
 		$this->writeDependenciesFile();
 		file_put_contents($this->getFilename(), $content);
 	}
+    
 	private function writeDependenciesFile()
 	{
 		//depend on the main file (application.*) itself
@@ -85,12 +88,14 @@ class Cache
 
 		return $this->getFilename();
 	}
+    
 	public function __toString()
 	{
 		$this->process();
 		
 		return $this->getFilename();
 	}
+    
 	public function getContent()
 	{
 		$this->process();
