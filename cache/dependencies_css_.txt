@@ -1,6 +1,0 @@
-assets/stylesheets/style.css:1339446247
-assets/stylesheets/dood.css:1339433029
-assets/stylesheets/fooit/baz.css:1339431395
-assets/stylesheets/index_test/index.css:1339433024
-assets/stylesheets/recursive/test/baby/try.css:1339433560
-assets/stylesheets/application.css:1339445903
