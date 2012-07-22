@@ -22,7 +22,7 @@ class Haml extends Base
 	
 		extract($vars);
 		ob_start();
-		include $path;
+		require $path;
 		return ob_get_clean();
 	}
 }
