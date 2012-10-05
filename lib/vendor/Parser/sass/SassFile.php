@@ -1,164 +1,200 @@
 <?php
-/* SVN FILE: $Id: SassFile.php 118 2010-09-21 09:45:11Z chris.l.yates@gmail.com $ */
+/* SVN FILE: $Id$ */
 /**
  * SassFile class file.
  * File handling utilites.
- * @author			Chris Yates <chris.l.yates@gmail.com>
- * @copyright 	Copyright (c) 2010 PBM Web Development
- * @license			http://phamlp.googlecode.com/files/license.txt
- * @package			PHamlP
- * @subpackage	Sass
+ * @author      Chris Yates <chris.l.yates@gmail.com>
+ * @copyright   Copyright (c) 2010 PBM Web Development
+ * @license      http://phamlp.googlecode.com/files/license.txt
+ * @package      PHamlP
+ * @subpackage  Sass
  */
+
+use \Asset\Pipeline;
+use \Asset\File;
 
 /**
  * SassFile class.
- * @package			PHamlP
- * @subpackage	Sass
+ * @package      PHamlP
+ * @subpackage  Sass
  */
 class SassFile {
-	const SASS = 'sass';
-	const SCSS = 'scss';
-	const SASSC = 'sassc';
-	
-	private static $extensions = array(self::SASS, self::SCSS);
+  const CSS  = 'css';
+  const SASS = 'sass';
+  const SCSS = 'scss';
+  // const SASSC = 'sassc'; # tests for E_NOTICE
 
-	/**
-	 * Returns the parse tree for a file.
-	 * If caching is enabled a cached version will be used if possible; if not the
-	 * parsed file will be cached.
-	 * @param string filename to parse
-	 * @param SassParser Sass parser
-	 * @return SassRootNode
-	 */
-	public static function getTree($filename, $parser) {
-		if ($parser->cache) {
-			$cached = self::getCachedFile($filename, $parser->cache_location);
-			if ($cached !== false) {
-				return $cached;
-			}
-		}
+  private static $extensions = array(self::SASS, self::SCSS);
 
-		$sassParser = new SassParser(array_merge($parser->options, array('line'=>1)));
-		$tree = $sassParser->parse($filename);
-		if ($parser->cache) {
-			self::setCachedFile($tree, $filename, $parser->cache_location);
-		}
-		return $tree;
-	 }
+  public static $path = FALSE;
+  public static $parser = FALSE;
 
-	/**
-	 * Returns the full path to a file to parse.
-	 * The file is looked for recursively under the load_paths directories and
-	 * the template_location directory.
-	 * If the filename does not end in .sass or .scss try the current syntax first
-	 * then, if a file is not found, try the other syntax.
-	 * @param string filename to find
-	 * @param SassParser Sass parser
-	 * @return string path to file
-	 * @throws SassException if file not found
-	 */
-	public static function getFile($filename, $parser) {
-		$ext = substr($filename, -5);
-		
-		foreach (self::$extensions as $i=>$extension) {
-			if ($ext !== '.'.self::SASS && $ext !== '.'.self::SCSS) {
-				if ($i===0) {
-					$_filename = "$filename.{$parser->syntax}";
-				}
-				else {
-					$_filename = $filename.'.'.($parser->syntax === self::SASS ? self::SCSS : self::SASS);
-				}
-			}
-			else {
-				$_filename = $filename;
-			}
+  /**
+   * Returns the parse tree for a file.
+   * @param string filename to parse
+   * @param SassParser Sass parser
+   * @return SassRootNode
+   */
+  public static function get_tree($filename, &$parser) {
+    $contents = self::get_file_contents($filename, $parser);
 
-			if (file_exists($_filename)) {
-				return $_filename;
-			}
+    $options = array_merge($parser->options, array('line'=>1));
 
-			foreach (array_merge(array(dirname($parser->filename)), $parser->load_paths) as $loadPath) {
-				$path = self::findFile($_filename, realpath($loadPath));
-				if ($path !== false) {
-					return $path;
-				}
-			} // foreach
+    # attempt at cross-syntax imports.
+    $ext = substr($filename, strrpos($filename, '.') + 1);
+    if ($ext == self::SASS || $ext == self::SCSS) {
+      $options['syntax'] = $ext;
+    }
 
-			if (!empty($parser->template_location)) {
-				$path = self::findFile($_filename, realpath($parser->template_location));
-				if ($path !== false) {
-					return $path;
-				}
-			}		
-		}
+    $dirname = dirname($filename);
+    $options['load_paths'][] = $dirname;
+    if (!in_array($dirname, $parser->load_paths)) {
+      $parser->load_paths[] = dirname($filename);
+    }
 
-		throw new SassException('Unable to find {what}: {filename}', array('{what}'=>'import file', '{filename}'=>$filename));
-	}
+    $sassParser = new SassParser($options);
+    $tree = $sassParser->parse($contents, FALSE);
+    return $tree;
+  }
 
-	/**
-	 * Looks for the file recursively in the specified directory.
-	 * This will also look for _filename to handle Sass partials.
-	 * @param string filename to look for
-	 * @param string path to directory to look in and under
-	 * @return mixed string: full path to file if found, false if not
-	 */
-	public static function findFile($filename, $dir) {
-		$partialname = dirname($filename).DIRECTORY_SEPARATOR.'_'.basename($filename);
-		
-		foreach (array($filename, $partialname) as $file) {		
-			if (file_exists($dir . DIRECTORY_SEPARATOR . $file)) {
-				return realpath($dir . DIRECTORY_SEPARATOR . $file);
-			}		
-		}
+  public static function get_file_contents($filename, $parser) {
+    $contents = file_get_contents($filename) . "\n\n "; #add some whitespace to fix bug
+    # strip // comments at this stage, with allowances for http:// style locations.
+    $contents = preg_replace("/(^|\s)\/\/[^\n]+/", '', $contents);
+    // SassFile::$parser = $parser;
+    // SassFile::$path = $filename;
+    // $contents = preg_replace_callback('/url\(\s*[\'"]?(?![a-z]+:|\/+)([^\'")]+)[\'"]?\s*\)/i', 'SassFile::resolve_paths', $contents);
+    return $contents;
+  }
 
-		$files = array_slice(scandir($dir), 2);
+  public static function resolve_paths($matches) {
+    // Resolve the path into something nicer...
+    return 'url("' . self::resolve_path($matches[1]) . '")';
+  }
 
-		foreach ($files as $file) {
-			if (is_dir($dir . DIRECTORY_SEPARATOR . $file)) {
-				$path = self::findFile($filename, $dir . DIRECTORY_SEPARATOR . $file);
-				if ($path !== false) {
-					return $path;
-				}
-			}
-		} // foreach
-	  return false;
-	}
+  public static function resolve_path($name) {
+    $path = self::$parser->basepath . self::$path;
+    $path = substr($path, 0, strrpos($path, '/')) . '/';
+    $path = $path . $name;
+    $last = '';
+    while ($path != $last) {
+      $last = $path;
+      $path = preg_replace('`(^|/)(?!\.\./)([^/]+)/\.\./`', '$1', $path);
+    }
+    return $path;
+  }
 
-	/**
-	 * Returns a cached version of the file if available.
-	 * @param string filename to fetch
-	 * @param string path to cache location
-	 * @return mixed the cached file if available or false if it is not
-	 */
-	public static function getCachedFile($filename, $cacheLocation) {
-		$cached = realpath($cacheLocation) . DIRECTORY_SEPARATOR .
-			md5($filename) . '.'.self::SASSC;
+  /**
+   * Returns the full path to a file to parse.
+   * The file is looked for recursively under the load_paths directories
+   * If the filename does not end in .sass or .scss try the current syntax first
+   * then, if a file is not found, try the other syntax.
+   * @param string filename to find
+   * @param SassParser Sass parser
+   * @return array of string path(s) to file(s) or FALSE if no such file
+   */
+  public static function get_file($filename, &$parser, $sass_only = TRUE) {
+    static $loaded;
 
-		if ($cached && file_exists($cached) &&
-				filemtime($cached) >= filemtime($filename)) {
-			return unserialize(file_get_contents($cached));
-		}
-		return false;
-	}
+    $ext = substr($filename, strrpos($filename, '.') + 1);
+    // if the last char isn't *, and it's not (.sass|.scss|.css)
+    if ($sass_only && substr($filename, -1) != '*' && $ext !== self::SASS && $ext !== self::SCSS && $ext !== self::CSS) {
+      $sass = self::get_file($filename . '.' . self::SASS, $parser);
+      return $sass ? $sass : self::get_file($filename . '.' . self::SCSS, $parser);
+    }
+    if (file_exists($filename)) {
+      Pipeline::$cache['dir'] = Pipeline::getCurrentInstance()->resolveDir($filename);
+      return array($filename);
+    }
+    $paths = $parser->load_paths;
+    if(is_string($parser->filename) && $path = dirname($parser->filename)) {
+      $paths[] = $path;
+      if (!in_array($path, $parser->load_paths)) {
+        $parser->load_paths[] = $path;
+      }
+    }
+    foreach ($paths as $path) {
+      $filepath = self::find_file($filename, realpath($path));
+      if ($filepath !== false) {
+        return array($filepath);
+      }
+    }
+    foreach ($parser->load_path_functions as $function) {
+      if (function_exists($function) && $paths = call_user_func($function, $filename, $parser)) {
+        return $paths;
+      }
+    }
 
-	/**
-	 * Saves a cached version of the file.
-	 * @param SassRootNode Sass tree to save
-	 * @param string filename to save
-	 * @param string path to cache location
-	 * @return mixed the cached file if available or false if it is not
-	 */
-	public static function setCachedFile($sassc, $filename, $cacheLocation) {
-		$cacheDir = realpath($cacheLocation);
+    $pipeline = Pipeline::getCurrentInstance();
 
-		if (!$cacheDir) {
-			mkdir($cacheLocation);
-			@chmod($cacheLocation, 0777);
-			$cacheDir = realpath($cacheLocation);
-		}
+    $dir = Pipeline::getCurrentInstance()->resolveDir($parser->token->filename);
+    $filename = str_replace('.sass', '', $filename);
 
-		$cached = $cacheDir . DIRECTORY_SEPARATOR . md5($filename) . '.'.self::SASSC;
+    if ($filename[1] == '/')
+      $_f = $f = $filename;
+    else
+      $_f = $f = $dir . '/' . $filename;
 
-		return file_put_contents($cached, serialize($sassc));
-	}
+    if ($pipeline->hasFile($f, 'css'))
+      $file = new File($f . '.css');
+    else if ($pipeline->hasFile($index_file = $f . '/index', 'css'))
+      $file = new File($index_file . '.css');
+    else
+    {
+      vardump($filename, $dir, $parser->token->filename, $parser->filename, $loaded, '--');
+      if (in_array($filename, $loaded))
+        return -1;
+      else
+        return false;
+
+      $dir = Pipeline::cache('dir');
+      vdump($_f, $f, $filename);
+      $f = $dir . '/' . $f;
+
+      if ($pipeline->hasFile($f, 'css'))
+        $file = new File($f . '.css');
+      else if ($pipeline->hasFile($index_file = $f . '/index', 'css'))
+        $file = new File($index_file . '.css');
+      else
+      {
+        return false;
+      }
+    }
+
+//      return false;
+
+    $loaded[] = $file->getFilepath();
+    return array($file->getFilepath());
+  }
+
+  /**
+   * Looks for the file recursively in the specified directory.
+   * This will also look for _filename to handle Sass partials.
+   * @param string filename to look for
+   * @param string path to directory to look in and under
+   * @return mixed string: full path to file if found, false if not
+   */
+  public static function find_file($filename, $dir) {
+    $partialname = dirname($filename).DIRECTORY_SEPARATOR.'_'.basename($filename);
+
+    foreach (array($filename, $partialname) as $file) {
+      if (file_exists($dir . DIRECTORY_SEPARATOR . $file)) {
+        return realpath($dir . DIRECTORY_SEPARATOR . $file);
+      }
+    }
+
+    if (is_dir($dir)) {
+      $files = array_slice(scandir($dir), 2);
+
+      foreach ($files as $file) {
+        if (is_dir($dir . DIRECTORY_SEPARATOR . $file)) {
+          $path = self::find_file($filename, $dir . DIRECTORY_SEPARATOR . $file);
+          if ($path !== false) {
+            return $path;
+          }
+        }
+      }
+    }
+    return false;
+  }
 }

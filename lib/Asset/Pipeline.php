@@ -6,16 +6,27 @@ class Pipeline
 	static private $current_instance,
 		$filters = array();
 	private $base_directories,
+		$directories_for_type,
 		$dependencies,
 		$files = array(),
 		$file_added = false,
 		$processed_files = array(),
-		$main_file_name = 'application';
+		$main_file_name = 'application',
+		$prefix;
+	static public $cache = array();
 	const DEPTH = 3;
 
-	public function __construct($base_directories)
+	static public function cache($n, $v=null) {
+		if (isset(self::$cache[$n]))$r=self::$cache[$n];else $r=null;
+		if(null!==$v)self::$cache[$n]=$v;
+		return $r;
+	}
+
+	public function __construct($base_directories, $directories_for_type = array(), $prefix = '')
 	{
+		$this->prefix = $prefix;
 		$this->base_directories = (array) $base_directories;
+		$this->directories_for_type = $directories_for_type;
 		$this->readCache();
 	}
 	
@@ -35,7 +46,12 @@ class Pipeline
 		$directories_hash = md5(implode(';', $this->base_directories));
 		return self::getCacheDirectory() . 'file_list_' . $directories_hash . '.php';
 	}
-	
+
+	public function getPrefix()
+	{
+		return $this->prefix;
+	}
+
 	public function readCache()
 	{
 		if (file_exists($file = $this->getFileListCache()))
@@ -46,6 +62,32 @@ class Pipeline
 	{
 		if ($this->file_added)
 			file_put_contents($this->getFileListCache(), '<?php return ' . var_export($this->files, true) . ';');
+	}
+
+	public function resolveDir($f)
+	{
+		if (!is_string($f))
+			return '';
+
+		$f = str_replace('//', '/', $f);
+
+		foreach ($this->base_directories as $base_directory)
+		{
+			if (substr($f, 0, $len = strlen($base_directory)) == $base_directory)
+			{
+				$stripped = substr($f, $len);
+
+				foreach ($this->directories_for_type as $type)
+				{
+					if (substr($stripped, 0, $len = strlen($type)) == $type)
+					{
+						$stripped = substr($stripped, $len + 1); //renome "/"
+						return implode('/', array_slice(explode('/', $stripped), 0, -1));
+					}
+				}
+				exit($f . ' starts with ' . $base_directory);
+			}
+		}
 	}
 
 	public function __invoke($t,$m=null,$v=array()){return $this->process($t,$m,$v);}
@@ -75,6 +117,33 @@ class Pipeline
 		return $this->base_directories;
 	}
 
+	public function getDirectoriesFor($type)
+	{
+		$directories = array();
+
+		$directory_for_type = $this->getDirectoryForType($type);
+
+		foreach ($this->base_directories as $base_directory)
+			$directories[] = $base_directory . $directory_for_type;
+		
+		return $directories;
+	}
+
+	public function getDirectoryForType($type)
+	{
+		switch ($named_type = $type)
+		{
+			case 'png':
+			case 'gif':
+			case 'jpg':
+			case 'jpeg':
+				$named_type = 'img';
+		}
+
+		return isset($this->directories_for_type[$named_type]) ?
+		 '/' . $this->directories_for_type[$named_type] : '';
+	}
+
 	public function hasFile($name, $type)
 	{
 		return !!$this->findFile($name, $type);
@@ -90,16 +159,22 @@ class Pipeline
 	
 	public function getFilesUnder($directory, $type, $depth = -1)
 	{
+#		$cache_file = $this->getCacheDirectory() . 'directory_' . md5($directory) . '_' . $type . '_' . $depth . '.php';
+#		if (false && file_exists($cache_file)) //disabled ATM
+#			return include $cache_file;
+#		else
+#		{
 		$files = array();
 		
 		$directory = '/' . trim($directory, './') . '/';
-		
+		$directory_for_type = $this->getDirectoryForType($type);
+
 		foreach ($this->base_directories as $base_directory)
 		{
-			$directory_length = strlen($base_directory) + 1; //+1 for '/'
-		
-			$directory_files = glob($base_directory . $directory . '*');
-			$found = false;
+			$directory_length = strlen($base_directory . $directory_for_type) + 1; //+1 for '/'
+
+			$directory_files = glob($e = $base_directory . $directory_for_type . $directory . '*');
+
 			$directories = array();
 			foreach ($directory_files as $path)
 			{
@@ -131,15 +206,12 @@ class Pipeline
 						continue;
 
 					$this->processed_files[$full_path] = true;
-					$found = true;
 					$files[] = $full_path;
 				}
 			}
-			if ($directories && $found && ($depth - 1))
+
+			if ($directories && $depth - 1)
 			{ //$depth is either -1 or >0
-			//$found: if we have a file with this extension in the directory.
-			//		Else, there's no point in continuing
-			//		you may need to add a file with the type to tell Sprockets-PHP to keep looking
 				foreach ($directories as $directory)
 				{
 					$files_under = $this->getFilesUnder($directory, $type, -1 == $depth ? -1 : $depth - 1);
@@ -147,19 +219,29 @@ class Pipeline
 				}
 			}
 		}
-		
+
+#		file_put_contents($cache_file, '<?php return ' . var_export($files, true) . ';');
 		return $files;
+#		}
 	}
 	
+	/**
+	 * finds a file, whether it has many extensions or not
+	 * `findFile('xe', 'css')` will find 'xs.css.less'
+	 *
+	 * @param 
+	 */
 	private function findFile($name, $type)
 	{
-		if (isset($this->files[$type][$name]))
-			return $this->files[$type][$name];
+		if (isset($this->files[$type][$name]) && file_exists($file = $this->files[$type][$name]))
+			return $file;
 	
+		$directory_for_type = $this->getDirectoryForType($type);
+
 		foreach ($this->base_directories as $base_directory)
 		{
-			$files = glob($base_directory . substr('/' . $name . '.' . $type, 0, -1) . '*');
-			
+			$files = glob($e=$base_directory . $directory_for_type . substr('/' . $name . '.' . $type, 0, -1) . '*');
+
 			if ($files)
 			{
 				$this->files[$type][$name] = $files[0];
@@ -177,14 +259,16 @@ class Pipeline
 		return isset($this->directories[$name]);
 	}
 	
-	public function getDirectory($name)
+	public function getDirectory($name, $type)
 	{
 		if ('' === $name = '/' . trim($name, '/.') . '/')
 			return true;
 
+		$directory_for_type = $this->getDirectoryForType($type);
+
 		foreach ($this->base_directories as $base_directory)
 		{
-			$directory = $base_directory . $name;
+			$directory = $base_directory . $directory_for_type . $name;
 
 			if (file_exists($directory) && is_dir($directory))
 				return $directory;
@@ -201,36 +285,78 @@ class Pipeline
 		$this->processed_files[$file] = true;
 	}
 	
-	public function addDependency($path)
+	/**
+	 * adds the $path to dependency list of $type
+	 * using type-based dependencies to, for example, allow a css file to rely on a .png file
+	 *
+	 * @param string $type dependency type (application.$type)
+	 * @param string $path file path (x.png, for example)
+	 */
+	public function addDependency($type, $path)
 	{
 		if (null === $this->dependencies)
 			$this->dependencies = array();
-		else if (!isset($this->dependencies[$path]))
+		if (!isset($this->dependencies[$type]))
+			$this->dependencies[$type] = array();
+		
+		if (!isset($this->dependencies[$type][$path]))
 			//in order to not register the first file
-			$this->dependencies[$path] = true;
+			$this->dependencies[$type][$path] = true;
 	}
 	
-	public function getDependencies()
+	/**
+	 * returns dependency list for the given $type
+	 *
+	 * @param string $type dependency type (application.$type)
+	 *
+	 * @return array files dependent for the type
+	 */
+	public function getDependencies($type)
 	{
-		return array_keys($this->dependencies);
+		return array_keys($this->dependencies[$type]);
 	}
-	
-	public function getDependenciesFileContent()
+
+	/**
+	 * returns dependency list formatted for storing
+	 *
+	 * @param string $type dependency type (application.$type)
+	 *
+	 * @return string file formatted "path:mtime\npath:..."
+	 */
+	public function getDependenciesFileContent($type)
 	{
 		$hash = array();
 		
-		foreach ($this->getDependencies() as $dependency)
+		foreach ($this->getDependencies($type) as $dependency)
 			$hash[] = $dependency . ':' . filemtime($dependency);
 			
 		return implode("\n", $hash);
 	}
 	
-	public function applyFilter($content, $filter, $file, $vars)
+	/**
+	 * apply a filter
+	 * used for singletonization of filters
+	 *
+	 * @param string $content content to apply filter on
+	 * @param string $filter filter name
+	 * @param string $file file name (for errors / cache naming)
+	 * @param array $vars context
+	 *
+	 * @return string $content with $filter processed on
+	 */
+	public function applyFilter($content, $filter, $file, $dir, $vars)
 	{
 		$filter = $this->getFilter($filter);
-		return $filter($content, $file, $vars);
+		return $filter($content, $file, $dir, $vars);
 	}
 	
+	/**
+	 * fitler singleton
+	 *
+	 * @param string $name filter name
+	 *
+	 * @return string Filter\iFilter
+	 */
 	private function getFilter($name)
 	{
 		if (!isset(self::$filters[$name]))
@@ -242,6 +368,11 @@ class Pipeline
 		return self::$filters[$name];
 	}
 
+	/**
+	 * singleton
+	 *
+	 * @return Pipeline current pipeline instance
+	 */
 	static public function getCurrentInstance()
 	{
 		if (!self::$current_instance)

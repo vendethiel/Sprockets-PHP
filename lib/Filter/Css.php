@@ -3,7 +3,7 @@ namespace Filter;
 
 class Css implements iFilter
 {
-	public function __invoke($content, $file, $args)
+	public function __invoke($content, $file, $dir, $vars)
 	{
 		return preg_replace_callback('`url\([\'"]?([a-zA-Z0-9/\._-]+)[\'"]?\)`', function ($match)
 		{

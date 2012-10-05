@@ -14,13 +14,13 @@ class Less implements iFilter
 	{
 		$this->parser = new \lessc;
 
-		foreach (Pipeline::getCurrentInstance()->getBaseDirectories() as $dir)
+		foreach (Pipeline::getCurrentInstance()->getDirectoriesFor('css') as $dir)
 			$this->parser->addImportDir($dir);
 		
 		return $this->parser;
 	}
 	
-	public function __invoke($content, $file, $vars)
+	public function __invoke($content, $file, $dir, $vars)
 	{
 		return $this->getParser()->parse($content);
 	}

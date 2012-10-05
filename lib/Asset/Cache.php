@@ -17,7 +17,8 @@ class Cache
 	
 	private function getDependenciesFilename()
 	{
-		return $this->options['cache_directory'] . 'dependencies_' . $this->type . '.txt';
+		return $this->options['cache_directory'] . 'dependencies_' .
+		 $this->pipeline->getPrefix() . '_' . $this->type . '.txt';
 	}
     
 	private function getFilename()
@@ -44,6 +45,9 @@ class Cache
 		$dependencies_file = file_get_contents($path);
 		foreach (explode("\n", $dependencies_file) as $line)
 		{ //for each dependency, check its state
+			if ($line == '')
+				continue;
+
 			list($file, $mtime) = explode(':', $line);
 			
 			if (!file_exists($file))
@@ -69,9 +73,9 @@ class Cache
 	private function writeDependenciesFile()
 	{
 		//depend on the main file (application.*) itself
-		$this->pipeline->addDependency($this->pipeline->getMainFile($this->type));
+		$this->pipeline->addDependency($this->type, $this->pipeline->getMainFile($this->type));
 		
-		$content = $this->pipeline->getDependenciesFileContent();
+		$content = $this->pipeline->getDependenciesFileContent($this->type);
 
 		$this->hash = md5($content);
 		file_put_contents($this->getDependenciesFilename(), $content);
@@ -81,6 +85,7 @@ class Cache
 	{
 		if ($this->processed)
 			return $this->getFilename();
+
 		$this->processed = true;
 	
 		if (!$this->isFresh())
@@ -90,9 +95,11 @@ class Cache
 	}
     
 	public function __toString()
-	{
+	{ try {
 		$this->process();
-		
+	} catch (\Exception $e) {
+		exit("exception type " . get_class($e) . " ({$e->getMessage()}) : " . $e->getTraceAsString());
+	}	
 		return $this->getFilename();
 	}
     

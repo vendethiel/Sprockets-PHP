@@ -15,7 +15,7 @@ class Haml extends Base
 		return $this->parser;
 	}
 
-	public function __invoke($content, $file, $vars)
+	public function __invoke($content, $file, $dir, $vars)
 	{
 		if (!file_exists($path = $this->getCacheDir($file, __CLASS__) . md5($content)))
 			file_put_contents($path, $this->getParser()->parseText($content));

@@ -11,7 +11,7 @@ class Tree
 		$this->name = $name;
 		$this->type = $type;
 		$this->vars = $vars;
-		$this->path = Pipeline::getCurrentInstance()->getDirectory($name);
+		$this->path = Pipeline::getCurrentInstance()->getDirectory($name, $type);
 	}
 	
 	protected function getFilesList()
