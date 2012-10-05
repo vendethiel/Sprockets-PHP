@@ -16,7 +16,6 @@
         }
     ],
     "require": {
-        "coffeescript/coffeescript": "1.1.1",
-        "richthegeek/phpsass": "dev-master"
+        "coffeescript/coffeescript": "1.1.1"
     }
 }
