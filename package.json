@@ -8,7 +8,12 @@
   },
   "dependencies": {
     "LiveScript": ">= 1.x",
+    
+    "uglify-js2": "2.0.0",
+
     "stylus": "0.28.2",
-    "nib": ">= 0.7"
+    "nib": ">= 0.7",
+
+    "clean-css": "*"
   }
 }

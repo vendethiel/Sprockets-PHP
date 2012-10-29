@@ -1,6 +1,8 @@
 <?php
 namespace Asset;
 
+require __DIR__ . '/functions.php';
+
 class Pipeline
 {
 	static private $current_instance,
@@ -361,7 +363,7 @@ class Pipeline
 	{
 		if (!isset(self::$filters[$name]))
 		{
-			$class = 'Filter\\' . ucfirst($name);
+			$class = 'Asset\Filter\\' . ucfirst($name);
 			self::$filters[$name] = new $class;
 		}
 		

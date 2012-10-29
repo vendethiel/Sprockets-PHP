@@ -18,7 +18,7 @@ class Cache
 	private function getDependenciesFilename()
 	{
 		return $this->options['cache_directory'] . 'dependencies_' .
-		 $this->pipeline->getPrefix() . '_' . $this->type . '.txt';
+		 $this->pipeline->getPrefix();
 	}
     
 	private function getFilename()
@@ -26,7 +26,8 @@ class Cache
 		if (!$this->hash)
 			throw new \RuntimeException('Cache::getFilename has been called before dependencies were resolved');
 	
-		return str_replace('dependencies', 'file_' . $this->hash, $this->getDependenciesFilename()) . '.' . $this->type;
+		return str_replace('dependencies', 'file_' . $this->hash, $this->getDependenciesFilename()) .
+		 (empty($this->options['minify']) ? '' : 'minified.') . '.' . $this->type;
 	}
 	
 	private function isFresh()
@@ -66,6 +67,14 @@ class Cache
 		$pipeline = $this->pipeline; //__invoke won't with "$this->pipeline()"
 	
 		$content = $pipeline($this->type, null, $this->vars);
+
+		if (!empty($this->options['minify'])
+		 && class_exists($class = 'Asset\Filter\Minifier\\' . ucfirst($this->type)))
+		{
+			$minified = new $class;
+			$content = $minified($content);
+		}
+
 		$this->writeDependenciesFile();
 		file_put_contents($this->getFilename(), $content);
 	}

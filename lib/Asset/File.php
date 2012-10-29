@@ -70,7 +70,7 @@ class File
 	private function getProcessedContent()
 	{
 		$filters = $this->filters;
-		if (class_exists('Filter\\' . ucfirst($this->type)))
+		if (class_exists('Asset\Filter\\' . ucfirst($this->type)))
 			$filters[] = $this->type;
 
 		$content = self::processFilters($this->filepath, $this->directory, $filters, $this->vars);

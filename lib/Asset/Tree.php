@@ -22,7 +22,7 @@ class Tree
 	
 	public function process()
 	{
-		$content = '';
+		$content = ' ';
 
 		//create an instance of File in order to parse other dependencies
 		foreach ($this->getFilesList() as $file)
@@ -30,15 +30,9 @@ class Tree
 		
 		return $content;
 	}
-	
+
 	public function __toString()
 	{
-		try {
-			return $this->process();
-		} catch (Exception\Asset $e) {
-			exit('Asset exception : ' . $e->getMessage());
-		} catch (\Exception $e) {
-			exit('External exception : ' . $e->getMessage());
-		}
+		return $this->process();
 	}
 }
