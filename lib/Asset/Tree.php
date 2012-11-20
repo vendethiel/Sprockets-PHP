@@ -32,7 +32,10 @@ class Tree
 	}
 
 	public function __toString()
-	{
-		return $this->process();
+	{ try {
+		return $this->process();	
+	} catch (\Exception $e) {
+		vdump($e);
+	}
 	}
 }

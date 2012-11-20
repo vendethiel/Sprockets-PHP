@@ -353,8 +353,8 @@ class SassParser {
 
   public function getCallbacks() {
     return $this->callbacks + array(
-      'warn' => NULL,
-      'debug' => NULL,
+      'warn' => null,
+      'debug' => null,
     );
   }
 

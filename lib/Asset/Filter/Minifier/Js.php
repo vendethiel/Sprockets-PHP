@@ -10,28 +10,35 @@ namespace Asset\Filter\Minifier;
  */
 class Js extends Base
 {
-	public function __invoke($content)
+	public function __invoke($files, $content)
 	{
-		//@todo md5 thousands of lines is stupid, what can I do ?
-		$cache_file = $this->getCacheDir(md5($content) . '|js', __CLASS__);
-		if (file_exists($js_cache_file = str_replace('.js', '.minified.js', $cache_file)))
+		$cache_file = $this->getCacheDir($hash = md5(implode('*', $files)) . '|js', __CLASS__);
+		$js_cache_file = str_replace('.js', '.minified.js', $cache_file);
+		$source_map = str_replace('.js', '.js.map', $cache_file);
+
+		$cache_dir = trim(str_replace('\\', '/', $this->getCacheDir()), '/');
+//		vdump(, dirname(dirname(dirname(__DIR__))));
+
+		if (file_exists($js_cache_file))
 			return file_get_contents($js_cache_file);
 
 		if (!file_exists($cache_file))
 			file_put_contents($cache_file, $content);
 
-		$source_map = $cache_file . '.map';
+#		$files_instruction = implode(' ', array_map(function ($file) { return '"' . $file . '"';}, array_values($files)));
 
-		$out = $this->processNode("uglify-js2/bin/uglifyjs2 $cache_file -o $js_cache_file --source-map $source_map");
+#		$out = $this->processNode("uglify-js2/bin/uglifyjs2\" $files_instruction -o \"$js_cache_file\" --source-map \"$source_map\"");
+		$out = $this->processNode("uglify-js2/bin/uglifyjs2\" \"$cache_file\" -o \"$js_cache_file\" ");
+#			. "--source-map \"$source_map\" --source-map-root \"$cache_dir\"");
 
 		if (!file_exists($js_cache_file))
 		{
-			echo "UglifyJS2 Minification Error<pre>" . str_replace($cache_file, $file, $out) . "</pre>";
+			echo "UglifyJS2 Minification Error<pre>" . str_replace($cache_file, $js_cache_file, $out) . "</pre>";
 
 			@unlink($log);
 			exit;
 		}
 
-		return file_get_contents($js_cache_file);
+		return file_get_contents(str_ireplace(array('c:/', 'c:\\'), 'file://C:/', $js_cache_file));
 	}
 }

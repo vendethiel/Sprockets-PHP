@@ -8,7 +8,9 @@ class Coffee extends Base
 {
 	public function __invoke($content, $file, $dir, $vars)
 	{
-		$cache_file = $this->getCacheDir('coffee_' . md5($content), __CLASS__);
+		$cache_file = $this->getCacheDir('coffee_' . md5($content) . '|js', __CLASS__);
+
+		$this->registerFile($file, $cache_file);
 
 		if (file_exists($cache_file))
 			return file_get_contents($cache_file);

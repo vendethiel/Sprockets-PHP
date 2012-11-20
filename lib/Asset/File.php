@@ -24,19 +24,20 @@ class File
 		$this->vars = $vars;
 
 		$this->file = basename($path);
-		$filename_parts = explode('.', $this->file);
-		if (!isset($filename_parts[1]))
-			vdump($path, 'no filename parts 1');
-		$this->name = $filename_parts[0];
-		$this->type = $filename_parts[1];
+
+		list($this->name, $this->type, $i) = $pipeline->getNameAndExtension($this->file);
 
 		$this->path_with_simple_filename = ('' === $this->directory ? '' : $this->directory . '/') . $this->name;
 		$this->filepath = $pipeline->getFile($this->path_with_simple_filename, $this->type);
 
+		if (!$this->type)
+			vdump($this->type, 'no type');
+
 		$full_filename = explode('/', $this->filepath);
 		$this->full_filename = end($full_filename);
 		$full_filename_parts = explode('.', $this->full_filename);
-		$this->filters = array_reverse(array_slice($full_filename_parts, 2)); //['less', 'php'] => ['php', 'less']
+
+		$this->filters = array_reverse(array_slice($full_filename_parts, $i + 1)); //['less', 'php'] => ['php', 'less']
 
 		if (in_array($this->type, array('html', 'css', 'js')))
 			$pipeline->addDependency($this->type, $this->filepath);
