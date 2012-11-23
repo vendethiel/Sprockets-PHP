@@ -16,6 +16,8 @@
         }
     ],
     "require": {
-        "coffeescript/coffeescript": "1.1.1"
+        "coffeescript/coffeescript": "1.1.1",
+        "mthaml/mthaml": "1.1.1",
+        "twig/twig": "1.11.*"
     }
 }

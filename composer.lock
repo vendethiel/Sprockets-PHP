@@ -1,16 +1,145 @@
 {
-    "hash": "c5661491be84ce867d5c9f005681913d",
+    "hash": "d74cb213dbac3b3e44874faccea94349",
     "packages": [
         {
-            "package": "coffeescript/coffeescript",
-            "version": "1.1.1"
+            "name": "coffeescript/coffeescript",
+            "version": "1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/alxlit/coffeescript-php",
+                "reference": "1.1.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/alxlit/coffeescript-php/zipball/1.1.1",
+                "reference": "1.1.1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "time": "2012-04-07 16:57:28",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "CoffeeScript": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Alex Little",
+                    "email": "alxlit@gmail.com",
+                    "homepage": "http://alxlit.name"
+                }
+            ],
+            "description": "A port of the CoffeeScript compiler to PHP.",
+            "homepage": "http://github.com/alxlit/coffeescript-php",
+            "keywords": [
+                "javascript",
+                "JS",
+                "coffee",
+                "coffeescript"
+            ]
+        },
+        {
+            "name": "mthaml/mthaml",
+            "version": "1.1.1",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/arnaud-lb/MtHaml.git",
+                "reference": "1.1.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/arnaud-lb/MtHaml/zipball/1.1.1",
+                "reference": "1.1.1",
+                "shasum": ""
+            },
+            "conflict": {
+                "mthaml/mthaml-bundle": "<1.1.0"
+            },
+            "time": "2012-09-24 07:59:45",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "MtHaml\\": "lib/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Arnaud Le Blanc",
+                    "email": "arnaud.lb@gmail.com"
+                }
+            ],
+            "description": "HAML for PHP",
+            "homepage": "https://github.com/arnaud-lb/MtHaml",
+            "keywords": [
+                "HAML"
+            ]
+        },
+        {
+            "name": "twig/twig",
+            "version": "v1.11.1",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/fabpot/Twig.git",
+                "reference": "v1.11.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/fabpot/Twig/archive/v1.11.1.zip",
+                "reference": "v1.11.1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2.4"
+            },
+            "time": "2012-11-11 17:17:59",
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.11-dev"
+                }
+            },
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Twig_": "lib/"
+                }
+            },
+            "license": [
+                "BSD-3"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Armin Ronacher",
+                    "email": "armin.ronacher@active-4.com"
+                }
+            ],
+            "description": "Twig, the flexible, fast, and secure template language for PHP",
+            "homepage": "http://twig.sensiolabs.org",
+            "keywords": [
+                "templating"
+            ]
         }
     ],
     "packages-dev": null,
     "aliases": [
 
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "stability-flags": [
 
     ]

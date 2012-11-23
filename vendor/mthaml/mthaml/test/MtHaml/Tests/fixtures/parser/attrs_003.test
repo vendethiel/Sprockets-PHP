@@ -1,0 +1,30 @@
+--HAML--
+%p(foo=bar )
+%p(foo="bar"|baz)
+%p(foo="bar ")
+%p{:foo => "bar" }
+%p{:foo => "bar"|baz }
+%p(foo=bar bar="foo#{a == b ? "b ar" : ""}")
+--EXPECT--
+root(
+  tag(p
+    attr(text(foo)insert(bar))
+  )
+  tag(p
+    attr(text(foo)insert("bar"|baz))
+  )
+  tag(p
+    attr(text(foo)interpolated(text(bar )))
+  )
+  tag(p
+    attr(text(foo)interpolated(text(bar)))
+  )
+  tag(p
+    attr(text(foo)insert("bar"|baz))
+  )
+  tag(p
+    attr(text(foo)insert(bar))
+    attr(text(bar)interpolated(text(foo)insert(a == b ? "b ar" : "")))
+  )
+)
+
