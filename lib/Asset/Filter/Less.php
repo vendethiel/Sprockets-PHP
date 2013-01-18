@@ -14,7 +14,7 @@ class Less extends Base
 	{
 		$this->parser = new \lessc;
 
-		foreach (Pipeline::getCurrentInstance()->getDirectoriesFor('css') as $dir)
+		foreach (Pipeline::getCurrentInstance()->getLocator()->getDirectoriesFor('css') as $dir)
 			$this->parser->addImportDir($dir);
 
 

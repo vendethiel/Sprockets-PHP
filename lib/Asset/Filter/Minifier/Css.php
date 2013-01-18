@@ -2,11 +2,7 @@
 namespace Asset\Filter\Minifier;
 
 /**
- * @todo the way the asset pipeline works ATM is that
- *  each files comes with its related content (directives)
- *  in order for the view_pipeline to work
- *  however this forbids the true use of source maps
- *  because it'll map to the big file.
+ * node:clean-css
  */
 class Css extends Base
 {
@@ -20,7 +16,7 @@ class Css extends Base
 		if (!file_exists($cache_file))
 			file_put_contents($cache_file, $content);
 
-		$out = $this->processNode("clean-css/bin/cleancss\" \"$cache_file\" -o \"$css_cache_file\"");
+		$out = $this->processNode(array('clean-css/bin/cleancss', $cache_file, '-o', $css_cache_file));
 
 		if (!file_exists($css_cache_file))
 		{

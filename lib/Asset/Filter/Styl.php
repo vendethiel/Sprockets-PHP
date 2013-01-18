@@ -15,8 +15,8 @@ class Styl extends Base
 		if (!file_exists($cache_file))
 			file_put_contents($cache_file, $content);
 
-		$nib = '"' . NODE_MODULES_PATH . 'nib/lib/nib"';
-		$out = $this->processNode("stylus/bin/stylus\" -u $nib \"$cache_file\"");
+		$nib = NODE_MODULES_PATH . 'nib/lib/nib';
+		$out = $this->processNode(array('stylus/bin/stylus', '-u', $nib, $cache_file));
 
 		if (!file_exists($css_cache_file))
 		{

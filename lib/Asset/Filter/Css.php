@@ -7,7 +7,7 @@ class Css extends Base
 	{
 		return preg_replace_callback('`url\([\'"]?([a-zA-Z0-9/\._-]+)[\'"]?\)`', function ($match) use ($dir)
 		{
-			$file = new \Asset\File($dir . '/' . $match[1]);
+			$file = new \Asset\File(($dir ? $dir . '/' : '') . $match[1]);
 			return 'url(../' . $file->getFilepath() . ')'; //@todo don't simply guess ../ ><!
 		}, $content);
 	}

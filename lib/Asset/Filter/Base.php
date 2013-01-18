@@ -10,6 +10,14 @@ if (!defined('NODE_MODULES_PATH'))
 
 abstract class Base
 {
+	protected $pipeline, $locator;
+
+	public function setPipeline($pipeline)
+	{
+		$this->pipeline = $pipeline;
+		$this->locator = $pipeline->getLocator();
+	}
+
 	public function getCacheDir($file = '', $class = '')
 	{
 		$class = str_replace('\\', '__', $class);
@@ -21,9 +29,8 @@ abstract class Base
 
 	protected function registerFile($name, $to)
 	{
-		$pipeline = Pipeline::getCurrentInstance();
-		list($from, $type) = $pipeline->getNameAndExtension($name);
-		$pipeline->registerFile($type, $from, $to);
+		list($from, $type) = $this->locator->getNameAndExtension($name);
+		$this->pipeline->registerFile($type, $from, $to);
 	}
 
 	protected function processNode($cmd)
@@ -31,16 +38,10 @@ abstract class Base
 	    $log = $this->getCacheDir('node_log');
 	    @unlink($log);
 
-	    /*
-	     * I believe the NODE_BINARY hack currently fails on windows
-	     * for the sole reason that `C:/> /foo/bar.bat` fails
-	     * @todo? when windows
-	    $dir = dirname(NODE_BINARY);
-	    $binary = basename(NODE_BINARY);
-	    $script = 'cd "' . $dir . '"" && "' . $binary . '" ' . NODE...
-	     */
-	    $script = NODE_BINARY . ' "' . NODE_MODULES_PATH . $cmd;
-	    exec($e = "$script > \"$log\" 2>&1", $out); //2>&1 redirects stderr to stdout
+	    $cmd[0] = NODE_MODULES_PATH . $cmd[0];
+	    $script = implode(' ', array_map(function ($it) { return '"' . $it . '"'; },
+	     array_merge(array(NODE_BINARY), $cmd)));
+	    exec("$script > \"$log\" 2>&1", $out); //2>&1 redirects stderr to stdout
 
 	    return file_exists($log) ? file_get_contents($log) : 'Failing command : ' . $e;
 	}

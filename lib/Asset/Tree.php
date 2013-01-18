@@ -11,13 +11,16 @@ class Tree
 		$this->name = $name;
 		$this->type = $type;
 		$this->vars = $vars;
-		$this->path = Pipeline::getCurrentInstance()->getDirectory($name, $type);
+
+		$this->locator = Pipeline::getCurrentInstance()->getLocator();
+
+		$this->path = $this->locator->getDirectory($name, $type);
 	}
 	
 	protected function getFilesList()
 	{
 		//use static::DEPTH for class Directory
-		return Pipeline::getCurrentInstance()->getFilesUnder($this->name, $this->type, static::DEPTH);
+		return $this->locator->getFilesUnder($this->name, $this->type, static::DEPTH);
 	}
 	
 	public function process()

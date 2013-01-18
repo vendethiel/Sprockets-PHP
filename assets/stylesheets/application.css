@@ -1,3 +1,5 @@
-//= require style
-//= require_directory .
-//= require_tree recursive
+/**
+ *= require style
+ *= require_directory .
+ *= require_tree recursive
+ */

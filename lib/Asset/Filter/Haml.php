@@ -1,6 +1,8 @@
 <?php
 namespace Asset\Filter;
 
+use \MtHaml;
+
 class Haml extends Base
 {
 	private $parser;
@@ -10,7 +12,7 @@ class Haml extends Base
 	private function getParser()
 	{
 		if (!$this->parser)
-			$this->parser = new \HamlParser();
+			$this->parser = new MtHaml\Environment('php');
 		
 		return $this->parser;
 	}
@@ -18,8 +20,8 @@ class Haml extends Base
 	public function __invoke($content, $file, $dir, $vars)
 	{
 		if (!file_exists($path = $this->getCacheDir($file, __CLASS__) . md5($content)))
-			file_put_contents($path, $this->getParser()->parseText($content));
-	
+			file_put_contents($path, $this->getParser()->compileString($content, $file));
+
 		extract($vars);
 		ob_start();
 		require $path;

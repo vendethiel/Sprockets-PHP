@@ -8,6 +8,8 @@ use Asset\Pipeline;
  */
 class Ls extends Base
 {
+	protected $bare = false;
+
 	public function __invoke($content, $file, $dir, $vars)
 	{
 		$cache_file = $this->getCacheDir($file . '_' . $md5 = md5($content) . '|ls', __CLASS__);
@@ -20,7 +22,9 @@ class Ls extends Base
 		if (!file_exists($cache_file))
 			file_put_contents($cache_file, $content);
 
-		$out = $this->processNode("LiveScript/bin/livescript\" -c \"$cache_file\"");
+		$opts = array('LiveScript/bin/livescript', '-c' . ($this->bare ? 'b' : ''), $cache_file);
+
+		$out = $this->processNode($opts);
 
 		if (!file_exists($js_cache_file))
 		{
