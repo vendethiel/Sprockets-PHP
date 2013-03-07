@@ -77,6 +77,7 @@ class Cache
 
 		$this->writeDependenciesFile();
 		file_put_contents($this->getFilename(), $content);
+#		file_put_contents($this->getFilename().'.gz', gzcompress($content));
 	}
     
 	private function writeDependenciesFile()
@@ -104,11 +105,12 @@ class Cache
 	}
     
 	public function __toString()
-	{ try {
-		$this->process();
-	} catch (\Exception $e) {
-		exit("exception type " . get_class($e) . " ({$e->getMessage()}) : " . $e->getTraceAsString());
-	}	
+	{
+		try {
+			$this->process();
+		} catch (\Exception $e) {
+			exit("exception type " . get_class($e) . " ({$e->getMessage()}) : " . $e->getTraceAsString());
+		}
 		return $this->getFilename();
 	}
     
