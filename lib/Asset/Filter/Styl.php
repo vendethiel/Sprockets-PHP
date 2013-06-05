@@ -20,10 +20,8 @@ class Styl extends Base
 
 		if (!file_exists($css_cache_file))
 		{
-			echo "Stylus Compilation Error<pre>" . str_replace($cache_file, $file, $out) . "</pre>";
-
-			@unlink($log);
-			exit;
+			throw new Exception\Filter("Stylus Compilation Error<pre>" .
+			 str_replace($cache_file, $file, $out) . "</pre>");
 		}
 
 		return file_get_contents($css_cache_file);

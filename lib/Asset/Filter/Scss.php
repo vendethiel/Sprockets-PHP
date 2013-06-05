@@ -39,11 +39,7 @@ class Scss extends Base
 			return '@import "' . str_replace('//', '/', $file->getFilepath()) . '"';
 		}, $content);
 
-		$p = Pipeline::cache('dir', $dir);
-
 		$content = $this->parser->toCss($content, false);
-
-		Pipeline::$cache['dir'] = $dir;
 
 		return $content;
 	}

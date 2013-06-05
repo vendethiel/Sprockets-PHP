@@ -1,25 +1,24 @@
 <?php
 namespace Asset;
 
+use Filter\iFilter;
+
 require __DIR__ . '/functions.php';
 
 class Pipeline
 {
 	static private $current_instance,
 		$filters = array();
+	
+	static public $cache_directory = 'cache/';
+
 	private $extensions,
 		$dependencies,
 		$main_file_name = 'application',
 		$prefix,
 		$registered_files = array();
-	static public $cache = array();
-	const DEPTH = 3;
 
-	static public function cache($n, $v=null) {
-		if (isset(self::$cache[$n]))$r=self::$cache[$n];else $r=null;
-		if(null!==$v)self::$cache[$n]=$v;
-		return $r;
-	}
+	const DEPTH = 3;
 
 	public function __construct($paths, $prefix = '')
 	{
@@ -27,28 +26,25 @@ class Pipeline
 		$this->locator = new Locator((array) $paths, $prefix);
 	}
 
-	static public function getCacheDirectory()
-	{
-		//../../cache/
-		$directory = dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'cache/';
-		
-		if (!file_exists($directory))
-			mkdir($directory);
-		
-		return $directory;
-	}
-
-	public function getLocator()
-	{
-		return $this->locator;
-	}
-
-	public function getPrefix()
-	{
-		return $this->prefix;
-	}
-
+	/**
+	 * Alias for {@link process()}
+	 *
+	 * @api
+	 */
 	public function __invoke($t,$m=null,$v=array(),$f=false){return $this->process($t,$m,$v,$f);}
+
+	/**
+	 * Runs the pipeline
+	 *
+	 * @param string $type asset type
+	 * @param string $main_file main file, "application.$type" by default
+	 * @param array $vars context for the pipeline (vars you pass to templates)
+	 * @param bool $full True if you want an array containing file list and content
+	 *
+	 * @return string|array string unless $full
+	 *
+	 * @api
+	 */
 	public function process($type, $main_file = null, $vars = array(), $full = false)
 	{
 		if (self::$current_instance)
@@ -66,7 +62,42 @@ class Pipeline
 		
 		return $full ? array($this->registered_files[$type], $content) : $content;
 	}
-	
+
+	/**
+	 * registers a special extension
+	 *
+	 * @example registerFilter('md', 'Asset\Filter\Markdown');
+	 *
+	 * @param string $ext Extension
+	 * @param string $class Filter class
+	 *
+	 * @api
+	 */
+	public function registerFilter($ext, $class)
+	{
+		$this->extensions[strtolower($ext)] = $class;
+	}
+
+	static public function getCacheDirectory()
+	{
+		$directory = self::$cache_directory . 'assets/';
+
+		if (!file_exists($directory))
+			mkdir($directory, 777, true);
+		
+		return $directory;
+	}
+
+	public function getLocator()
+	{
+		return $this->locator;
+	}
+
+	public function getPrefix()
+	{
+		return $this->prefix;
+	}
+
 	/**
 	 * returns the main file for a certain type
 	 * proxies to the Locator
@@ -92,6 +123,11 @@ class Pipeline
 		$this->registered_files[$type][$from] = $to;
 	}
 
+	/**
+	 * auto-vivificates $this->registered_files (shouldn't be needed)
+	 *
+	 * @param string $type file type or null for the whole array
+	 */
 	public function getRegisteredFiles($type = null)
 	{
 		if (null === $type)
@@ -101,19 +137,6 @@ class Pipeline
 			return $this->registered_files[$type];
 
 		return array();
-	}
-
-	/**
-	 * registers a special extension
-	 *
-	 * @example registerFilter('md', 'Asset\Filter\Markdown');
-	 *
-	 * @param string $ext Extension
-	 * @param string $class Filter class
-	 */
-	public function registerFilter($ext, $class)
-	{
-		$this->extensions[strtolower($ext)] = $class;
 	}
 	
 	/**

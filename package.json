@@ -1,7 +1,7 @@
 {
   "name": "Sprockets-PHP",
   "description": "Sprockets for PHP",
-  "version": "1.3.0",
+  "version": "0.0.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/Nami-Doc/Sprockets-PHP"

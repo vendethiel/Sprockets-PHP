@@ -28,10 +28,8 @@ class Ls extends Base
 
 		if (!file_exists($js_cache_file))
 		{
-			echo "LiveScript Compilation Error<pre>" . str_replace($cache_file, $file, $out) . "</pre>";
-
-			@unlink($log);
-			exit;
+			throw new Exception\Filter("LiveScript Compilation Error<pre>" .
+			 str_replace($cache_file, $file, $out) . "</pre>");
 		}
 
 		return file_get_contents($js_cache_file);

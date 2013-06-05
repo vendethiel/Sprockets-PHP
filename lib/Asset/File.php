@@ -111,8 +111,8 @@ class File
 		} catch (Exception\Asset $e) {
 			exit('Asset exception (' . $this->getFilepath() . ') : ' . $e->getMessage());
 		} catch (\Exception $e) {
-			echo '<pre>' . $e->getTraceAsString() . '</pre>';
-			exit('External exception (' . $this->getFilepath() . ') : ' . $e->getMessage());
+			exit('External exception (' . $this->getFilepath() . ') : ' . $e->getMessage() .
+			 '<pre>' . $e->getTraceAsString() . '</pre>');
 		}
 	}
 
