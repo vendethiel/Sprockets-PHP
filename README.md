@@ -50,7 +50,7 @@ You can add your own filters in a very flexible way (see below).
 
 # How can I use it ?!
 
-You have to create an instance of `Asset\Pipeline`.
+You have to create an instance of `Sprockets\Pipeline`.
 The argument is the array of "base paths" from where the Pipeline has to search files.
 
 If you want to call directly the Pipeline, you can then do `$pipeline($asset_type)`.
@@ -68,7 +68,7 @@ $paths = str_replace('%template%', 'MyTemplate', file_get_contents('paths.json')
 $paths = json_decode($paths, true);
 
 // create a pipeline
-$pipeline = new Asset\Pipeline($paths);
+$pipeline = new Sprockets\Pipeline($paths);
 
 // finds `application.css` in the paths
 echo $pipeline('css');
@@ -77,7 +77,7 @@ echo $pipeline('css');
 echo $pipeline('css', 'layout');
 
 // same as the first example, but will cache it into a file
-$cache = new \Asset\Cache($pipeline, 'css', $vars = array(), $options = array());
+$cache = new Sprockets\Cache($pipeline, 'css', $vars = array(), $options = array());
 // $options you can pass :
 // `minify` whether you want to minify the output or not
 // - `.js` : Minified through [Esmangle](https://github.com/Constellation/esmangle)
@@ -140,33 +140,8 @@ Only the "meaningful" extension matters (using a whitelist).
  */
 ```
 
-### Options
-You can change the `node` path, the cache directory (by default `cache/`) and node modules path
-by setting them from your `$paths`.
-```php
-array(
-  'template' => array(
-    'directories' => array(
-      'assets/'
-    )
-  ),
-  'NODE_PATH' => '"C:/Program Files/nodejs/node"',
-  'NPM_PATH' => '/my/app/node_modules/',
-  'CACHE_DIRECTORY' => 'cache/'
-);
-// may be :
-//unix
-// * /usr/bin/node
-// * /usr/local/bin/node
-//windows
-// * "C:/Program Files (x86)/nodejs/node"
-// * "C:/Program Files/nodejs/node"
-//it may vary however
-define('NODE_BINARY', 'node');
-// if you want to use your own npm modules and **override** the Pipeline's one.
-define('NODE_MODULES_PATH', '/my/node_modules/');
-```
-You shouldn't need to change it if it's in your path, however.
+## Caching
+Something to note : even if you're not using `Sprockets\Cache`, the asset pipeline will keep a file list cache in your cache directory, to speed up path lookups.
 
 ## Directive Syntax
 There are three supported syntaxs at this moment.
@@ -229,7 +204,7 @@ Adding filter is very easy (to create a `.twig` filter or a `.md`, for example).
 $pipeline->registerFilter('md', 'My\Markdown\Parser');
 ```
 
-You must implement an interface like `\Asset\Filter\Interface` :
+You must implement an interface like `\Sprockets\Filter\Interface` :
 ```php
 interface Interface
 {
@@ -240,7 +215,7 @@ interface Interface
 }
 ```
 
-You can also inherit `Asset\Filter\Base` which gives you access to :
+You can also inherit `Sprockets\Filter\Base` which gives you access to :
  - `$this->pipeline` current pipeline instance
  - `$this->processNode()` passing an argument array, auto-quoted, like this : `array('modulename/bin/mod', '-c', $file))`
    Note that the first argument gets the `NODE_MODULES_PATH` prepended automatically.

@@ -14,10 +14,9 @@ $paths = str_replace('%template%', 'MyTemplate', file_get_contents('paths.json')
 $paths = json_decode($paths, true);
 
 // create a pipeline
-$pipeline = new Asset\Pipeline($paths);
+$pipeline = new Sprockets\Pipeline($paths);
 
-$js = new Asset\Cache($pipeline, 'js');
-$css = new Asset\Cache($pipeline, 'css');
+$js = new Sprockets\Cache($pipeline, 'js');
+$css = new Sprockets\Cache($pipeline, 'css');
 
-//echo $js->getContent();
-echo $css->getContent();
+echo (string) $js, "\n", $css->getContent();
