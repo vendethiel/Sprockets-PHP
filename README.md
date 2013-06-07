@@ -1,7 +1,54 @@
 Sprockets-PHP
 ===============
 
-This is a port of Sprockets (Rails Asset Pipeline) for PHP.
+# What is Sprockets-PHP
+
+Sprockets-PHP is a port of Sprockets, the well-known Asset Manager for Rails.
+Sprockets-PHP allows you to manage your assets by taking care of preprocessors, dependencies, minification and caching.
+The Asset Pipeline will read your main file (usually "application.js" or "application.css"), read directives, and apply filters for all the files.
+This is an example usage
+
+`application.js`
+```js
+/**
+ * (see the "directive syntax" section below)
+ *= require jquery
+ *= require lib/form
+ *= require lib/inputs/{text,password}
+ *= require_directory lib/loaders
+ */
+```
+
+`lib/form/index.js.coffee`
+```coffee
+class @Form
+  @Inputs = {}
+  constructor: ->
+//= require /base-input
+```
+
+`/lib/form/base-input.js.coffee`
+```js
+class @Form.BaseInput
+```
+
+`lib/inputs/text.js.coffee`
+```coffee
+class @Form.Inputs.Text extends @Form.BaseInput
+  @type: 'Text'
+```
+
+`lib/inputs/password.js.ls`
+```ls
+class @Form.Inputs.Password extends @Form.BaseInput
+  @type = 'Password'
+  -> console.log <[base password]>
+```
+
+It's primary meant to deal with JS and CSS but can as well be used for HTML (HAML, Twig, Slim...).
+You can add your own filters in a very flexible way (see below).
+
+# How can I use it ?!
 
 You have to create an instance of `Asset\Pipeline`.
 The argument is the array of "base paths" from where the Pipeline has to search files.
@@ -16,6 +63,7 @@ This file must contain "directives", like Sprockets's one.
 ...
 
 // read paths.json - see below
+// you can of course pass a normal array !
 $paths = str_replace('%template%', 'MyTemplate', file_get_contents('paths.json'));
 $paths = json_decode($paths, true);
 
@@ -76,7 +124,6 @@ For example, if we run `$pipeline('js')`, the pipeline will try to find the foll
  - `app/themes/_shared/assets/javascripts/application.js`
  - `lib/assets/javascripts/application.js`
  - `vendor/assets/javascripts/application.js`
-
  - `vendor/bower/application.js`
  - `vendor/components/application.js`
 
@@ -114,7 +161,7 @@ define('NODE_MODULES_PATH', '/my/node_modules/');
 ```
 You shouldn't need to change it if it's in your path, however.
 
-## Directives Syntax
+## Directive Syntax
 There are three supported syntaxs at this moment.
 
 ```php
@@ -131,6 +178,7 @@ The directives disponibles are : `require`, `require_directory`, `require_tree` 
 ### require
 Requires a file directly, from the relative path OR one of the base path.
 You can also give a directory name, if this directory has a file named "index.$type" (here, "index.css") in.
+This directive supports bracket expansion.
 
 ### require_directory
 Requires each file of the directory. Not recursive.
@@ -158,7 +206,7 @@ Languages :
 
 JavaScript :
  - .ls : [LiveScript](http://livescript.org)
- - .coffee : [CoffeeScript](http://coffeescript.org) (through [coffeeScript-php](github.com/alxlit/coffeescript-php)
+ - .coffee : [CoffeeScript](http://coffeescript.org) (through [coffeescript-php](github.com/alxlit/coffeescript-php))
 
 Stylesheet :
  - .styl : [Stylus](http://learnboost.github.io/stylus/)
@@ -170,12 +218,12 @@ Html :
 
 
 Adding filter is very easy (to create a `.twig` filter or a `.md`, for example). Just add it to the pipeline :
-```
+```php
 $pipeline->registerFilter('md', 'My\Markdown\Parser');
 ```
 
 You must implement an interface like `\Asset\Filter\Interface` :
-```
+```php
 interface Interface
 {
 	/**
