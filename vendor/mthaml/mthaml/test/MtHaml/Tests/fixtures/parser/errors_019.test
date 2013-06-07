@@ -1,6 +1,0 @@
---HAML--
-%html(foo="bar" 
-%p
---EXCEPTION--
-MtHaml\Exception\SyntaxErrorException
-Unexpected '%', expected html attribute name or #{interpolation} in .* on line 3, column 1
