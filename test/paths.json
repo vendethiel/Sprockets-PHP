@@ -1,0 +1,23 @@
+{
+  "template": {
+    "directories": [
+      "themes/%template%/",
+      "themes/_shared/",
+      "lib/assets/",
+      "vendor/assets/"
+    ],
+    "prefixes": {
+      "js": "javascripts",
+      "css": "stylesheets",
+      "img": "images",
+      "font": "fonts"
+    }
+  },
+  "external": {
+    "directories": [
+      "vendor/bower/",
+      "vendor/components/"
+    ]
+  },
+  "CACHE_DIRECTORY": "my_cache/my_dir/"
+}

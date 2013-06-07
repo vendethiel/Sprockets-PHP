@@ -1,0 +1,23 @@
+<?php
+function vardump(){echo'<pre>';$e=func_get_args();foreach($e as $a)var_dump($a);}
+function vdump(){call_user_func_array('vardump',func_get_args());exit;}
+function camelize($s){$s=str_replace('_',' ',$s);$s=ucwords($s);return str_replace(' ','',$s);}
+function pascalize($s){return lcfirst(camelize($s));}
+function __autoload($s) {
+	$path = '../lib/' . str_replace(array('_', '\\'), '/', $s) . '.php';
+	if (file_exists($path)) return require $path; else return false; }
+
+
+// read paths.json - see below
+// you can of course pass a normal array !
+$paths = str_replace('%template%', 'MyTemplate', file_get_contents('paths.json'));
+$paths = json_decode($paths, true);
+
+// create a pipeline
+$pipeline = new Asset\Pipeline($paths);
+
+$js = new Asset\Cache($pipeline, 'js');
+$css = new Asset\Cache($pipeline, 'css');
+
+//echo $js->getContent();
+echo $css->getContent();

@@ -1,7 +1,7 @@
 <?php
 namespace Asset\Filter;
 
-use Asset\Pipeline;
+use Asset\Exception;
 
 /**
  * LiveScript filter

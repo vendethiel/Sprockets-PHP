@@ -5,15 +5,16 @@ use Asset\Pipeline;
 
 class Css extends Base
 {
+	const URL_REGEX = '`url\([\'"]?([a-zA-Z0-9/\._-]+)[\'"]?\)`';
 	public function __invoke($content, $file, $dir, $vars)
 	{
-		// XXX change that
-		//$base_url = str_repeat('../', substr_count(Pipeline::getCache, needle));
+		$base_url = str_repeat('../', substr_count($this->pipeline->getOption('CACHE_DIRECTORY'), '/'));
 
-		return preg_replace_callback('`url\([\'"]?([a-zA-Z0-9/\._-]+)[\'"]?\)`', function ($match) use ($dir)
+		return preg_replace_callback(self::URL_REGEX, function ($match) use ($dir, $base_url)
 		{
 			$file = new \Asset\File(($dir ? $dir . '/' : '') . $match[1]);
-			return 'url(../' . $file->getFilepath() . ')'; //@todo don't simply guess ../ ><!
+			//XXX maybe we should actually cache the image?
+			return 'url(' . $base_url . $file->getFilepath() . ')';
 		}, $content);
 	}
 }

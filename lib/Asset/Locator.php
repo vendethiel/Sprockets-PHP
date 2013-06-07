@@ -5,14 +5,15 @@ class Locator
 {
 	static private $files = null,
 		$file_added = false;
-	private $paths,
+	private $pipeline,
+			$paths,
 			$prefix,
 			$processed_files = array(),
 			$default_ext;
-#			$default_extensions = array();
 
-	public function __construct($paths, $prefix)
+	public function __construct($pipeline, $paths, $prefix)
 	{
+		$this->pipeline = $pipeline;
 		$this->paths = $paths;
 		$this->prefix = $prefix;
 
@@ -39,7 +40,7 @@ class Locator
 
 	public function getFileListName()
 	{
-		return Pipeline::getCacheDirectory() . 'filelist_' . $this->prefix . '.php';
+		return $this->pipeline->getCacheDirectory() . 'filelist_' . $this->prefix . '.php';
 	}
 
 	public function skipFile($file)

@@ -1,6 +1,8 @@
 <?php
 namespace Asset\Filter;
 
+use Asset\Exception;
+
 class Styl extends Base
 {
 	public function __invoke($content, $file, $dir, $vars)
@@ -15,7 +17,7 @@ class Styl extends Base
 		if (!file_exists($cache_file))
 			file_put_contents($cache_file, $content);
 
-		$nib = NODE_MODULES_PATH . 'nib/lib/nib';
+		$nib = $this->pipeline->getOption('NPM_PATH') . 'nib/lib/nib';
 		$out = $this->processNode(array('stylus/bin/stylus', '-u', $nib, $cache_file));
 
 		if (!file_exists($css_cache_file))

@@ -67,7 +67,7 @@ This file must contain "directives", like Sprockets's one.
 $paths = str_replace('%template%', 'MyTemplate', file_get_contents('paths.json'));
 $paths = json_decode($paths, true);
 
-// create a pipeline with 2 directories
+// create a pipeline
 $pipeline = new Asset\Pipeline($paths);
 
 // finds `application.css` in the paths
@@ -130,7 +130,7 @@ For example, if we run `$pipeline('js')`, the pipeline will try to find the foll
 This example file, allowing to use a Rails-like `javascripts/` directory for js file gracefully, also supports `//= require jquery/jquery` to find `vendor/bower/jquery/jquery.js`
 
 Only the "meaningful" extension matters (using a whitelist).
-```
+```js
 /**
  * for example
  *= require datatables/js/jquery.dataTables
@@ -140,13 +140,20 @@ Only the "meaningful" extension matters (using a whitelist).
  */
 ```
 
-## Cache
-All files are, by default, cached in `cache/assets`.
-You can change `Pipeline::$cacheDirectory` (by default `cache/`, `assets/` is automatically appended)
-
-### Node path
-You can change the `node` executable path by `define()`ing it.
+### Options
+You can change the `node` path, the cache directory (by default `cache/`) and node modules path
+by setting them from your `$paths`.
 ```php
+array(
+  'template' => array(
+    'directories' => array(
+      'assets/'
+    )
+  ),
+  'NODE_PATH' => '"C:/Program Files/nodejs/node"',
+  'NPM_PATH' => '/my/app/node_modules/',
+  'CACHE_DIRECTORY' => 'cache/'
+);
 // may be :
 //unix
 // * /usr/bin/node

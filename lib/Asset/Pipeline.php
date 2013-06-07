@@ -9,21 +9,23 @@ class Pipeline
 {
 	static private $current_instance,
 		$filters = array();
-	
-	static public $cache_directory = 'cache/';
 
 	private $extensions,
 		$dependencies,
 		$main_file_name = 'application',
 		$prefix,
-		$registered_files = array();
+		$registered_files = array(),
+		$options = array();
 
 	const DEPTH = 3;
 
 	public function __construct($paths, $prefix = '')
 	{
 		$this->prefix = $prefix;
-		$this->locator = new Locator((array) $paths, $prefix);
+
+		$paths = $this->setOptions($paths);
+
+		$this->locator = new Locator($this, (array) $paths, $prefix);
 	}
 
 	/**
@@ -64,6 +66,39 @@ class Pipeline
 	}
 
 	/**
+	 * set options (destructively) or defaults
+	 */
+	public function setOptions(array $options)
+	{
+		$base_options = array(
+			'NODE_PATH' => 'node',
+			'NPM_PATH' => __DIR__ . '/../../node_modules/',
+			'CACHE_DIRECTORY' => 'cache/',
+		);
+
+		foreach ($base_options as $key => $default)
+		{
+			if (isset($options[$key]))
+			{
+				$this->options[$key] = $options[$key];
+				unset($options[$key]);
+			}
+			else
+				$this->options[$key] = $default;
+		}
+
+		return $options;
+	}
+
+	/**
+	 * fetches an option
+	 */
+	public function getOption($name)
+	{
+		return $this->options[$name];
+	}
+
+	/**
 	 * registers a special extension
 	 *
 	 * @example registerFilter('md', 'Asset\Filter\Markdown');
@@ -78,9 +113,9 @@ class Pipeline
 		$this->extensions[strtolower($ext)] = $class;
 	}
 
-	static public function getCacheDirectory()
+	public function getCacheDirectory()
 	{
-		$directory = self::$cache_directory . 'assets/';
+		$directory = $this->getOption('CACHE_DIRECTORY') . 'assets/';
 
 		if (!file_exists($directory))
 			mkdir($directory, 777, true);
