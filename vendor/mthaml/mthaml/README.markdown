@@ -80,7 +80,7 @@ $twig->addExtension(new MtHaml\Support\Twig\Extension());
 $twig->render(...);
 ```
 
-See [examples][7]
+See [examples][7] and [MtHaml with Twig](https://github.com/arnaud-lb/MtHaml/wiki/Use-MtHaml-with-Twig)
 
 ## Escaping
 
@@ -190,9 +190,14 @@ Example:
 [Sass][6] can be used in PHP projects without problem.It only depends on Ruby and does not need to be installed on production servers. So MtHaml will not re-implement Sass.
 
 ## Frameworks and CMS support
-
+ 
+ - Drupal: https://github.com/antoinelafontaine/oxide
+ - FuelPHP: https://github.com/fuel/parser
+ - PHPixie: https://github.com/dracony/PHPixie-HAML
+ - Silex: https://github.com/arnaud-lb/Silex-MtHaml
  - Symfony2: https://github.com/arnaud-lb/MtHamlBundle
  - Zend Framework 1: https://github.com/bonndan/mthaml-zf1
+
 
 Add yours: https://github.com/arnaud-lb/MtHaml/edit/master/README.markdown
 

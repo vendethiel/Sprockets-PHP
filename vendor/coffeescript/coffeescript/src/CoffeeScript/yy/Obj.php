@@ -2,8 +2,6 @@
 
 namespace CoffeeScript;
 
-Init::init();
-
 class yy_Obj extends yy_Base
 {
   public $children = array('properties');
@@ -34,6 +32,28 @@ class yy_Obj extends yy_Base
   function compile_node($options)
   {
     $props = $this->properties;
+    $prop_names = array();
+
+    foreach ($this->properties as $prop)
+    {
+      if ($prop->is_complex())
+      {
+        $prop = isset($prop->variable) ? $prop->variable : NULL;
+      }
+
+      if ($prop)
+      {
+        $prop_name = $prop->unwrap_all();
+        $prop_name = isset($prop_name->value) ? $prop_name->value.'' : NULL;
+
+        if (in_array($prop_name, $prop_names))
+        {
+          throw new SyntaxError('multiple object literal properties named "'.$prop_name.'"');
+        }
+
+        $prop_names[] = $prop_name;
+      }
+    }
 
     if ( ! count($props))
     {

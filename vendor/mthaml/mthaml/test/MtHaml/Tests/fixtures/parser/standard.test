@@ -77,9 +77,9 @@ root(
       )
       interpolated(text(Wow.|))
       tag(p
-        insert("Holy cow        " ~"multiline       " ~"tags!           " ~"A pipe (|) even!")
+        insert("Holy cow        " ~ "multiline       " ~ "tags!           " ~ "A pipe (|) even!"   )
         insert([1, 2, 3]|length)
-        insert("Holy cow        " ~"multiline       " ~"tags!           ")
+        insert("Holy cow        " ~ "multiline       " ~ "tags!           "   )
       )
       tag(div
         attr(text(class)text(silent))
@@ -87,9 +87,9 @@ root(
         run(set foo = foo ~ " shouldn't")
         run(set foo = foo ~ " be displayed")
         insert(foo ~ " but now it should!")
-        comment(interpolated(text(Woah crap a non rendered comment!)))
+        comment(text(Woah crap a non rendered comment!))
       )
-      comment(interpolated(text(That was a line that shouldn't close everything.)))
+      comment(text(That was a line that shouldn't close everything.))
       interpolated(text(= Escape))
       tag(ul
         attr(text(class)text(really))

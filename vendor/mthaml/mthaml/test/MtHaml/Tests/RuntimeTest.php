@@ -3,6 +3,7 @@
 namespace MtHaml\Tests;
 
 use MtHaml\Runtime;
+use MtHaml\Runtime\AttributeList;
 
 class RuntimeTest extends \PHPUnit_Framework_TestCase
 {
@@ -54,6 +55,24 @@ class RuntimeTest extends \PHPUnit_Framework_TestCase
                     array('foo', 'bar'),
                     array('data-a', 'A2'),
                     array('data', array('a' => 'A', 'b' => 'B')),
+                ),
+            ),
+            'deeply nested data attribute' => array(
+                'foo="bar" data-a="A" data-b="B" data-c-d-e-f="F" data-c-g="G"',
+                array(
+                    array('foo', 'bar'),
+                    array('data', array(
+                        'a' => 'A',
+                        'b' => 'B',
+                        'c' => array(
+                            'd' => array(
+                                'e' => array(
+                                    'f' => 'F',
+                                ),
+                            ),
+                            'g' => 'G',
+                        ),
+                    )),
                 ),
             ),
             'single id attribute' => array(
@@ -146,6 +165,91 @@ class RuntimeTest extends \PHPUnit_Framework_TestCase
                     array('class', array('bar>')),
                 ),
             ),
+            'attribute list' => array(
+                'foo="bar" bar="baz" baz="qux" all="ok"',
+                array(
+                    array('foo', 'bar'),
+                    AttributeList::create(array(
+                        'bar' => 'baz',
+                        'baz' => 'qux',
+                    )),
+                    array('all', 'ok'),
+                ),
+            ),
         );
+    }
+
+    /**
+     * @dataProvider getObjectRefClassStringData
+     */
+    public function testGetObjectRefClassStringData($expect, $class)
+    {
+        $result = Runtime::getObjectRefClassString($class);
+        $this->assertSame($expect, $result);
+    }
+
+    public function getObjectRefClassStringData()
+    {
+        return array(
+            'simple' => array('foo_bar', 'FooBar'),
+            'underscores in name' => array('foo_bar', 'Foo_Bar'),
+            'multiple upper case' => array('foo_bbar', 'FooBBar'),
+            'namespace' => array('baz_qux', 'Foo\Bar\BazQux'),
+        );
+    }
+
+    public function testRenderObjectRefClass()
+    {
+        $object = new \stdClass;
+        $result = Runtime::renderObjectRefClass($object);
+        $this->assertSame('std_class', $result);
+
+        $object = new \stdClass;
+        $result = Runtime::renderObjectRefClass($object, 'pref<');
+        $this->assertSame('pref<_std_class', $result);
+    }
+
+    public function testRenderObjectRefId()
+    {
+        $object = new ObjectRefWithGetIdAndId;
+        $result = Runtime::renderObjectRefId($object);
+        $this->assertSame('object_ref_with_get_id_and_id_>get_id', $result);
+
+        $object = new ObjectRefWithGetIdAndId;
+        $result = Runtime::renderObjectRefId($object, 'pref<');
+        $this->assertSame('pref<_object_ref_with_get_id_and_id_>get_id', $result);
+
+        $object = new ObjectRefWithId;
+        $result = Runtime::renderObjectRefId($object);
+        $this->assertSame('object_ref_with_id_>id', $result);
+
+        $object = new ObjectRefWithGetIdAndId;
+        $object->getId = null;
+        $result = Runtime::renderObjectRefId($object);
+        $this->assertSame('object_ref_with_get_id_and_id_new', $result);
+    }
+}
+
+class ObjectRefWithGetIdAndId
+{
+    public $getId = '>get_id';
+    public $id = '>id';
+
+    public function getId()
+    {
+        return $this->getId;
+    }
+
+    public function id()
+    {
+        return $this->id;
+    }
+}
+
+class ObjectRefWithId
+{
+    public function id()
+    {
+        return '>id';
     }
 }

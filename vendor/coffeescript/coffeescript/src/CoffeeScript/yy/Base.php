@@ -4,7 +4,7 @@ namespace CoffeeScript;
 
 Init::init();
 
-class yy_Base
+abstract class yy_Base
 {
   public $as_key = FALSE;
   public $children = array();
@@ -22,8 +22,6 @@ class yy_Base
   public $to = NULL;
 
   function __construct() {}
-
-  function constructor() { return $this; }
 
   function __toString()
   {
@@ -77,7 +75,7 @@ class yy_Base
 
   function compile_closure($options)
   {
-    if ($this->jumps() || ($this instanceof yy_Throw))
+    if ($this->jumps())
     {
       throw new SyntaxError('cannot use a pure statement in an expression.');
     }
@@ -85,6 +83,7 @@ class yy_Base
     $options['sharedScope'] = TRUE;
 
     $closure = yy_Closure::wrap($this);
+
     return $closure->compile_node($options);
   }
 
@@ -164,11 +163,6 @@ class yy_Base
     return yy('Op', '!', $this);
   }
 
-  function assigns()
-  {
-    return FALSE;
-  }
-
   function is_assignable()
   {
     return FALSE;
@@ -189,7 +183,7 @@ class yy_Base
     return FALSE;
   }
 
-  function is_statement()
+  function is_statement($options = NULL)
   {
     return FALSE;
   }
@@ -219,9 +213,18 @@ class yy_Base
     return NULL;
   }
 
-  function make_return()
+  function make_return($res = NULL)
   {
-    return yy('Return', $this);
+    $me = $this->unwrap_all();
+
+    if ($res)
+    {
+      return yy('Call', yy('Literal', "{$res}.push"), array($me));
+    }
+    else
+    {
+      return yy('Return', $me);
+    }
   }
 
   function to_string($idt = '', $name = NULL)
@@ -259,7 +262,7 @@ class yy_Base
     });
   }
 
-  function unfold_soak($options)
+  function unfold_soak($options = NULL)
   {
     return FALSE;
   }
@@ -273,9 +276,9 @@ class yy_Base
   {
     $node = $this;
 
-    while ($node !== ($node = $node->unwrap()))
+    while ($node !== ($tmp = $node->unwrap()))
     {
-      continue;
+      $node = $tmp;
     }
 
     return $node;

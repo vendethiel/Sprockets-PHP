@@ -2,16 +2,12 @@
 
 namespace CoffeeScript;
 
-Init::init();
-
 class yy_Slice extends yy_Base
 {
   public $children = array('range');
 
   function constructor($range)
   {
-    parent::constructor();
-
     $this->range = $range;
 
     return $this;
@@ -39,7 +35,8 @@ class yy_Slice extends yy_Base
       }
       else
       {
-        $to_str .= "({$compiled} + 1) || 9e9";
+        $compiled = $to->compile($options, LEVEL_ACCESS);
+        $to_str .= "{$compiled} + 1 || 9e9";
       }
     }
 

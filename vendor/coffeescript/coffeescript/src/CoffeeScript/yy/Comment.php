@@ -2,12 +2,12 @@
 
 namespace CoffeeScript;
 
-Init::init();
-
 class yy_Comment extends yy_Base
 {
-  function constructor($comment)
+  function constructor()
   {
+    list($comment) = args(func_get_args(), 1);
+
     $this->comment = $comment;
 
     return $this;
@@ -15,8 +15,8 @@ class yy_Comment extends yy_Base
 
   function compile_node($options, $level = NULL)
   {
-    $code = '/*'.multident($this->comment, $this->tab).'*/';
-    
+    $code = '/*'.multident($this->comment, $this->tab)."\n{$this->tab}*/\n";
+
     if ($level === LEVEL_TOP || $options['level'] === LEVEL_TOP)
     {
       $code = $options['indent'].$code;
@@ -25,12 +25,12 @@ class yy_Comment extends yy_Base
     return $code;
   }
 
-  function is_statement()
+  function is_statement($options = NULL)
   {
     return TRUE;
   }
 
-  function make_return()
+  function make_return($res = NULL)
   {
     return $this;
   }

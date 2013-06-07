@@ -10,7 +10,7 @@ class TagAttribute extends NodeAbstract
     protected $name;
     protected $value;
 
-    public function __construct(array $position, NodeAbstract $name, NodeAbstract $value)
+    public function __construct(array $position, NodeAbstract $name = null, NodeAbstract $value = null)
     {
         parent::__construct($position);
         $this->name = $name;
@@ -51,10 +51,12 @@ class TagAttribute extends NodeAbstract
             }
             $visitor->leaveTagAttributeName($this);
 
-            if (false !== $visitor->enterTagAttributeValue($this)) {
-                $this->getValue()->accept($visitor);
+            if ($this->getValue()) {
+                if (false !== $visitor->enterTagAttributeValue($this)) {
+                    $this->getValue()->accept($visitor);
+                }
+                $visitor->leaveTagAttributeValue($this);
             }
-            $visitor->leaveTagAttributeValue($this);
         }
         $visitor->leaveTagAttribute($this);
     }

@@ -2,6 +2,8 @@
 
 namespace CoffeeScript;
 
+define('COFFEESCRIPT_VERSION', '1.3.1');
+
 class Init {
 
   /**
@@ -13,7 +15,7 @@ class Init {
   /**
    * This function may be used in lieu of an autoloader.
    */
-  static function requirements($root = NULL)
+  static function load($root = NULL)
   {
     if ($root === NULL)
     {
@@ -32,7 +34,9 @@ class Init {
       'SyntaxError',
       'Value',
 
-      'yy/Base', // load the base class first
+      'yy/Base',  // load the base class first
+      'yy/While', // For extends While
+
       'yy/Access',
       'yy/Arr',
       'yy/Assign',
@@ -53,7 +57,6 @@ class Init {
       'yy/Op',
       'yy/Param',
       'yy/Parens',
-      'yy/Push',
       'yy/Range',
       'yy/Return',
       'yy/Slice',
@@ -62,7 +65,6 @@ class Init {
       'yy/Throw',
       'yy/Try',
       'yy/Value',
-      'yy/While',
     );
 
     foreach ($files as $file)
@@ -73,9 +75,11 @@ class Init {
 
 }
 
-/**
- * Function shortcuts. These are all used internally.
- */
+//
+// Function shortcuts. These are all used internally.
+//
+
+function args(array $args, $required, array $optional = NULL) { return Helpers::args($args, $required, $optional); }
 function compact(array $array) { return Helpers::compact($array); }
 function del( & $obj, $key) { return Helpers::del($obj, $key); }
 function extend($obj, $properties) { return Helpers::extend($obj, $properties); }

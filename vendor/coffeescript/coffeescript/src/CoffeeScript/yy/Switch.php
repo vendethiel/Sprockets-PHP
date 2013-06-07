@@ -2,8 +2,6 @@
 
 namespace CoffeeScript;
 
-Init::init();
-
 class yy_Switch extends yy_Base
 {
   public $children = array('subject', 'cases', 'otherwise');
@@ -69,7 +67,7 @@ class yy_Switch extends yy_Base
     return $code.$this->tab.'}';
   }
 
-  function is_statement()
+  function is_statement($options = NULL)
   {
     return TRUE;
   }
@@ -99,16 +97,21 @@ class yy_Switch extends yy_Base
     return FALSE;
   }
 
-  function make_return()
+  function make_return($res = NULL)
   {
     foreach ($this->cases as $pair)
     {
-      $pair[1]->make_return();
+      $pair[1]->make_return($res);
     }
 
-    if (isset($this->otherwise) && $this->otherwise)
+    if ($res && ! $this->otherwise)
     {
-      $this->otherwise->make_return();
+      $this->otherwise = yy('Block', array(yy('Literal', 'void 0')));
+    }
+
+    if ($this->otherwise)
+    {
+      $this->otherwise->make_return($res);
     }
 
     return $this;

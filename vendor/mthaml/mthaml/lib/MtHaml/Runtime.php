@@ -2,6 +2,9 @@
 
 namespace MtHaml;
 
+use MtHaml\Runtime\AttributeInterpolation;
+use MtHaml\Runtime\AttributeList;
+
 class Runtime
 {
     /**
@@ -30,19 +33,18 @@ class Runtime
 
         foreach ($list as $item) {
 
+            if ($item instanceof AttributeInterpolation) {
+                $attributes[] = $item;
+                continue;
+            } else if ($item instanceof AttributeList) {
+                $attributes = array_merge($attributes, $item->attributes);
+                continue;
+            }
+
             list ($name, $value) = $item;
 
             if ('data' === $name) {
-                if (\is_array($value) || $value instanceof \Traversable) {
-                    foreach ($value as $subname => $subvalue) {
-                        $subname = 'data-' . $subname;
-                        if (!isset($attributes[$subname])) {
-                            $attributes[$subname] = $subvalue;
-                        }
-                    }
-                } else {
-                    $attributes[$name] = $value;
-                }
+                self::renderDataAttributes($attributes, $value);
             } else if ('id' === $name) {
                 $value = self::renderJoinedValue($value, '_');
                 if (null !== $value) {
@@ -85,7 +87,9 @@ class Runtime
             if (null !== $result) {
                 $result .= ' ';
             }
-            if (true === $value) {
+            if ($value instanceof AttributeInterpolation) {
+                $result .= $value->value;
+            } else if (true === $value) {
                 $result .= 
                     htmlspecialchars($name, ENT_QUOTES, $charset);
             } else {
@@ -98,6 +102,19 @@ class Runtime
         }
 
         return $result;
+    }
+
+    static private function renderDataAttributes(&$dest, $value, $prefix = 'data')
+    {
+        if (\is_array($value) || $value instanceof \Traversable) {
+            foreach ($value as $subname => $subvalue) {
+                self::renderDataAttributes($dest, $subvalue, $prefix.'-'.$subname);
+            }
+        } else {
+            if (!isset($dest[$prefix])) {
+                $dest[$prefix] = $value;
+            }
+        }
     }
 
     static private function renderJoinedValue($values, $separator)
@@ -123,5 +140,53 @@ class Runtime
         }
 
         return $result;
+    }
+
+    static public function renderObjectRefClass($object, $prefix = null)
+    {
+        if (!$object) {
+            return;
+        }
+
+        $class = self::getObjectRefClassString(get_class($object));
+
+        if (false !== $prefix && null !== $prefix) {
+            $class = $prefix . '_' . $class;
+        }
+
+        return $class;
+    }
+
+    static public function renderObjectRefId($object, $prefix = null)
+    {
+        if (!$object) {
+            return;
+        }
+
+        if (method_exists($object, 'getId')) {
+            $id = $object->getId();
+        } else if (method_exists($object, 'id')) {
+            $id = $object->id();
+        }
+
+        if (false === $id || null === $id) {
+            $id = 'new';
+        }
+
+        $id = self::getObjectRefClassString(get_class($object)) . '_' . $id;
+
+        if (false !== $prefix && null !== $prefix) {
+            $id = $prefix . '_' . $id;
+        }
+
+        return $id;
+    }
+
+    static public function getObjectRefClassString($class)
+    {
+        if (false !== $pos = \strrpos($class, '\\')) {
+            $class = \substr($class, $pos+1);
+        }
+        return \strtolower(\preg_replace('#(?<=[a-z])[A-Z]+#', '_$0', $class));
     }
 }

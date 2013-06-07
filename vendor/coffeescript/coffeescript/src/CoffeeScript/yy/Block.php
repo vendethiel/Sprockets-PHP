@@ -2,8 +2,6 @@
 
 namespace CoffeeScript;
 
-Init::init();
-
 class yy_Block extends yy_Base
 {
   public $children = array('expressions');
@@ -39,19 +37,26 @@ class yy_Block extends yy_Base
       $node = $node->unwrap_all();
       $node = ($tmp = $node->unfold_soak($options)) ? $tmp : $node;
 
-      if ($top)
+      if ($node instanceof yy_Block)
+      {
+        $codes[] = $node->compile_node($options);
+      }
+      else if ($top)
       {
         $node->front = TRUE;
         $code = $node->compile($options);
 
-        if ($node->is_statement($options))
+        if ( ! $node->is_statement($options))
         {
-          $codes[] = $code;
+          $code = "{$this->tab}{$code};";
+
+          if ($node instanceof yy_Literal)
+          {
+            $code = "{$code}\n";
+          }
         }
-        else
-        {
-          $codes[] = $this->tab.$code.';';
-        }
+
+        $codes[] = $code;
       }
       else
       {
@@ -61,7 +66,14 @@ class yy_Block extends yy_Base
 
     if ($top)
     {
-      return implode("\n", $codes);
+      if (isset($this->spaced) && $this->spaced)
+      {
+        return "\n".implode("\n\n", $codes)."\n";
+      }
+      else
+      {
+        return implode("\n", $codes);
+      }
     }
 
     $code = ($tmp = implode(', ', $codes)) ? $tmp : 'void 0';
@@ -78,13 +90,46 @@ class yy_Block extends yy_Base
 
   function compile_root($options)
   {
-    $options['indent'] = ($this->tab = isset($options['bare']) && $options['bare'] ? '' : TAB);
+    $options['indent'] = isset($options['bare']) && $options['bare'] ? '' : TAB;
     $options['scope'] = new Scope(NULL, $this, NULL);
     $options['level'] = LEVEL_TOP;
 
+    $this->spaced = TRUE;
+    $prelude = '';
+
+    if ( ! (isset($options['bare']) && $options['bare']))
+    {
+      $prelude_exps = array();
+
+      foreach ($this->expressions as $i => $exp)
+      {
+        if ( ! ($exp->unwrap() instanceof yy_Comment))
+        {
+          break;
+        }
+
+        $prelude_exps[] = $exp;
+      }
+
+      $rest = array_slice($this->expressions, count($prelude_exps));
+      $this->expressions = $prelude_exps;
+
+      if ($prelude_exps)
+      {
+        $prelude = $this->compile_node(array_merge($options, array('indent' => '')))."\n";
+      }
+
+      $this->expressions = $rest;
+    }
+
     $code = $this->compile_with_declarations($options);
 
-    return (isset($options['bare']) && $options['bare']) ? $code : "(function() {\n{$code}\n}).call(this);\n";
+    if (isset($options['bare']) && $options['bare'])
+    {
+      return $code;
+    }
+
+    return "{$prelude}(function() {\n{$code}\n}).call(this);\n";
   }
 
   function compile_with_declarations($options)
@@ -107,9 +152,8 @@ class yy_Block extends yy_Base
     {
       $rest = array_splice($this->expressions, $i, count($this->expressions));
 
-      // TODO: Figure out why there end up being missing newlines sometimes 
-      // (not important). The fix below isn't correct.
-      $code = $this->compile_node($options)."\n";
+      list($spaced, $this->spaced) = array(isset($this->spaced) && $this->spaced, FALSE);
+      list($code, $this->spaced) = array($this->compile_node($options), $spaced);
 
       $this->expressions = $rest;
     }
@@ -120,14 +164,34 @@ class yy_Block extends yy_Base
 
     if ($scope->expressions === $this)
     {
-      if ($scope->has_declarations())
-      {
-        $code .= $this->tab.'var '.implode(', ', $scope->declared_variables()).";\n";
-      }
+      $declars = $scope->has_declarations();
+      $assigns = $scope->has_assignments();
 
-      if ($scope->has_assignments())
+      if ($declars or $assigns)
       {
-        $code .= $this->tab.'var '.multident(implode(', ', $scope->assigned_variables()), $this->tab).";\n";
+        if ($i)
+        {
+          $code .= "\n";
+        }
+
+        $code .= $this->tab.'var ';
+
+        if ($declars)
+        {
+          $code .= implode(', ', $scope->declared_variables());
+        }
+
+        if ($assigns)
+        {
+          if ($declars)
+          {
+            $code .= ",\n{$this->tab}".TAB;
+          }
+
+          $code .= implode(",\n{$this->tab}".TAB, $scope->assigned_variables());
+        }
+
+        $code .= ";\n";
       }
     }
 
@@ -139,7 +203,7 @@ class yy_Block extends yy_Base
     return ! count($this->expressions);
   }
 
-  function is_statement($options)
+  function is_statement($options = NULL)
   {
     foreach ($this->expressions as $i => $expr)
     {
@@ -165,7 +229,7 @@ class yy_Block extends yy_Base
     return FALSE;
   }
 
-  function make_return()
+  function make_return($res = NULL)
   {
     $len = count($this->expressions);
 
@@ -175,11 +239,11 @@ class yy_Block extends yy_Base
 
       if ( ! ($expr instanceof yy_Comment))
       {
-        $this->expressions[$len] = $expr->make_return();
+        $this->expressions[$len] = $expr->make_return($res);
 
-        if ($expr instanceof yy_Return && ! $expr->expression)
+        if ($expr instanceof yy_Return && ! (isset($expr->expression) && $expr->expression))
         {
-          return array_splice($this->expressions, $len, 1);
+          array_splice($this->expressions, $len, 1);
         }
 
         break;

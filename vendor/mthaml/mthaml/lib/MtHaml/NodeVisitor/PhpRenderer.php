@@ -6,6 +6,11 @@ use MtHaml\Node\Insert;
 use MtHaml\Node\Run;
 use MtHaml\Node\InterpolatedString;
 use MtHaml\Node\Tag;
+use MtHaml\Node\ObjectRefClass;
+use MtHaml\Node\NodeAbstract;
+use MtHaml\Node\ObjectRefId;
+use MtHaml\Node\TagAttributeInterpolation;
+use MtHaml\Node\TagAttributeList;
 
 class PhpRenderer extends RendererAbstract
 {
@@ -42,6 +47,9 @@ class PhpRenderer extends RendererAbstract
 
     public function enterInsert(Insert $node)
     {
+        $content = $node->getContent();
+        $content = $this->trimInlineComments($content);
+
         if ($this->isEchoMode()) {
             $fmt = '<?php echo %s; ?>';
 
@@ -53,13 +61,13 @@ class PhpRenderer extends RendererAbstract
                 }
             }
             $this->addDebugInfos($node);
-            $this->raw(sprintf($fmt, $node->getContent(), $this->charset));
+            $this->raw(sprintf($fmt, $content, $this->charset));
         } else {
             $content = $node->getContent();
             if (!preg_match('~^\$?[a-zA-Z0-9_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$~', $content)) {
-                $this->raw('(' . $node->getContent() . ')');
+                $this->raw('(' . $content . ')');
             } else {
-                $this->raw($node->getContent());
+                $this->raw($content);
             }
         }
     }
@@ -67,24 +75,79 @@ class PhpRenderer extends RendererAbstract
     public function enterTopBlock(Run $node)
     {
         $this->addDebugInfos($node);
-        if (!$node->hasChilds()) {
-            $this->write(sprintf('<?php %s; ?>' , $node->getContent()));
+
+        $content = $this->trimInlineComments($node->getContent());
+
+        if (!$node->isBlock()) {
+            if (preg_match('~[:;]\s*$~', $content)) {
+                $this->write(sprintf('<?php %s ?>' , $content));
+            } else {
+                $this->write(sprintf('<?php %s; ?>' , $content));
+            }
         } else {
-            $this->write(sprintf('<?php %s { ?>' , $node->getContent()));
+            $this->write(sprintf('<?php %s { ?>' , $content));
         }
     }
 
     public function enterMidBlock(Run $node)
     {
         $this->addDebugInfos($node);
-        $this->write(sprintf('<?php } %s { ?>' , $node->getContent()));
+
+        $content = $this->trimInlineComments($node->getContent());
+
+        $this->write(sprintf('<?php } %s { ?>' , $content));
     }
 
     public function leaveTopBlock(Run $node)
     {
-        if ($node->hasChilds()) {
+        if ($node->isBlock()) {
             $this->write('<?php } ?>');
         }
+    }
+
+    public function enterObjectRefClass(ObjectRefClass $node)
+    {
+        if ($this->isEchoMode()) {
+            $this->raw('<?php echo ');
+        }
+        $this->raw('MtHaml\Runtime::renderObjectRefClass(');
+
+        $this->pushEchoMode(false);
+    }
+
+    public function leaveObjectRefClass(ObjectRefClass $node)
+    {
+        $this->raw(')');
+
+        $this->popEchoMode(true);
+        if ($this->isEchoMode()) {
+            $this->raw('; ?>');
+        }
+    }
+
+    public function enterObjectRefId(ObjectRefId $node)
+    {
+        if ($this->isEchoMode()) {
+            $this->raw('<?php echo ');
+        }
+        $this->raw('MtHaml\Runtime::renderObjectRefId(');
+
+        $this->pushEchoMode(false);
+    }
+
+    public function leaveObjectRefId(ObjectRefId $node)
+    {
+        $this->raw(')');
+
+        $this->popEchoMode(true);
+        if ($this->isEchoMode()) {
+            $this->raw('; ?>');
+        }
+    }
+
+    public function enterObjectRefPrefix(NodeAbstract $node)
+    {
+        $this->raw(', ');
     }
 
     protected function writeDebugInfos($lineno)
@@ -106,11 +169,25 @@ class PhpRenderer extends RendererAbstract
                 $this->raw(', ');
             }
 
-            $this->raw('array(');
-            $attr->getName()->accept($this);
-            $this->raw(', ');
-            $attr->getValue()->accept($this);
-            $this->raw(')');
+            if ($attr instanceof TagAttributeInterpolation) {
+                $this->raw('MtHaml\Runtime\AttributeInterpolation::create(');
+                $attr->getValue()->accept($this);
+                $this->raw(')');
+            } else if ($attr instanceof TagAttributeList) {
+                $this->raw('MtHaml\Runtime\AttributeList::create(');
+                $attr->getValue()->accept($this);
+                $this->raw(')');
+            } else {
+                $this->raw('array(');
+                $attr->getName()->accept($this);
+                $this->raw(', ');
+                if ($value = $attr->getValue()) {
+                    $attr->getValue()->accept($this);
+                } else {
+                    $this->raw('TRUE');
+                }
+                $this->raw(')');
+            }
 
             ++$n;
         }
@@ -125,6 +202,33 @@ class PhpRenderer extends RendererAbstract
         $this->raw($this->stringLiteral($this->charset));
 
         $this->raw('); ?>');
+    }
+
+    public function trimInlineComments($code)
+    {
+        // Removes inlines comments ('//' and '#'), while ignoring '//' and '#'
+        // embedded in quoted strings.
+
+        $re = "!
+            (?P<code>
+                (?P<expr>(?:
+                    # anything except \", ', `
+                    [^\"'`]
+
+                    # double quoted string
+                    | \"(?: [^\"\\\\]+ | \\\\. )*\"
+
+                    # single quoted string
+                    | '(?: [^'\\\\]+ | \\\\. )*'
+
+                    # backticks string
+                    | `(?: [^`\\\\]+ | \\\\. )*`
+                )+?)
+            )
+            (?P<comment>\s*(?://|\#).*)?
+        $!xA";
+
+        return preg_replace($re, '$1', $code);
     }
 }
 

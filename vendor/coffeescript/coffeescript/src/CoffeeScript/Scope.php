@@ -34,14 +34,16 @@ class Scope
 
   function add($name, $type, $immediate = FALSE)
   {
+    $name = ''.$name;
+
     if ($this->shared && ! $immediate)
     {
       return $this->parent->add($name, $type, $immediate);
     }
 
-    if (isset($this->positions[$name]) && is_numeric($pos = $this->positions[$name]))
+    if (isset($this->positions[$name]))
     {
-      $this->variables[$pos]['type'] = $type;
+      $this->variables[$this->positions[$name]]['type'] = $type;
     }
     else
     {
@@ -52,7 +54,7 @@ class Scope
 
   function assign($name, $value)
   {
-    $this->add($name, array('value' => $value, 'assigned' => TRUE));
+    $this->add($name, array('value' => $value, 'assigned' => TRUE), TRUE);
     $this->has_assignments = TRUE;
   }
 
@@ -66,7 +68,7 @@ class Scope
 
       if (is_array($type) && isset($type['assigned']) && $type['assigned'])
       {
-        $tmp[] = "{$v['name']} = {$v['type']['value']}";
+        $tmp[] = "{$v['name']} = {$type['value']}";
       }
     }
 
@@ -75,6 +77,8 @@ class Scope
 
   function check($name, $immediate = FALSE)
   {
+    $name = ''.$name;
+
     $found = !! $this->type($name);
 
     if ($found || $immediate)
@@ -123,16 +127,19 @@ class Scope
     return FALSE;
   }
 
-  function free_variable($type)
+  function free_variable($name, $reserve = TRUE)
   {
     $index = 0;
 
-    while ($this->check(($temp = $this->temporary($type, $index))))
+    while ($this->check(($temp = $this->temporary($name, $index))))
     {
       $index++;
     }
 
-    $this->add($temp, 'var', TRUE);
+    if ($reserve)
+    {
+      $this->add($temp, 'var', TRUE);
+    }
 
     return $temp;
   }
@@ -161,7 +168,7 @@ class Scope
   {
     if (strlen($name) > 1)
     {
-      return '_'.$name.($index > 1 ? $index : '');
+      return '_'.$name.($index > 1 ? $index - 1 : '');
     }
     else
     {

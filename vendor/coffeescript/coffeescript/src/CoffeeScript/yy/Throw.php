@@ -2,8 +2,6 @@
 
 namespace CoffeeScript;
 
-Init::init();
-
 class yy_Throw extends yy_Base
 {
   public $children = array('expression');
@@ -20,7 +18,7 @@ class yy_Throw extends yy_Base
     return $this->tab.'throw '.$this->expression->compile($options).';';
   }
 
-  function is_statement()
+  function is_statement($options = NULL)
   {
     return TRUE;
   }
@@ -30,7 +28,7 @@ class yy_Throw extends yy_Base
     return FALSE;
   }
 
-  function make_return()
+  function make_return($res = NULL)
   {
     return $this;
   }

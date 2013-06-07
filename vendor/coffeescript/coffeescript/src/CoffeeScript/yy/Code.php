@@ -2,8 +2,6 @@
 
 namespace CoffeeScript;
 
-Init::init();
-
 class yy_Code extends yy_Base
 {
   public $children = array('params', 'body');
@@ -13,7 +11,7 @@ class yy_Code extends yy_Base
     $this->params = $params ? $params : array();
     $this->body = $body ? $body : yy('Block');
     $this->bound = $tag === 'boundfunc';
-    $this->context = $this->bound ? 'this' : NULL;
+    $this->context = $this->bound ? '_this' : NULL;
 
     return $this;
   }
@@ -25,27 +23,39 @@ class yy_Code extends yy_Base
     $options['indent'] .= TAB;
 
     unset($options['bare']);
+    unset($options['isExistentialEquals']);
 
-    $vars  = array();
+    $params = array();
     $exprs = array();
+
+    foreach ($this->param_names() as $name)
+    {
+      if ( ! $options['scope']->check($name))
+      {
+        $options['scope']->parameter($name);
+      }
+    }
 
     foreach ($this->params as $param)
     {
       if ($param->splat)
       {
-        if (isset($param->name->value) && $param->name->value)
+        foreach ($this->params as $p)
         {
-          $options['scope']->add($param->name->value, 'var');
+          if (isset($p->name->value) && $p->name->value)
+          {
+            $options['scope']->add($p->name->value, 'var', TRUE);
+          }
         }
 
-        $params = array();
+        $tmp = array();
 
         foreach ($this->params as $p)
         {
-          $params[] = $p->as_reference($options);
+          $tmp[] = $p->as_reference($options);
         }
 
-        $splats = yy('Assign', yy('Value', yy('Arr', $params)), yy('Value', yy('Literal', 'arguments')));
+        $splats = yy('Assign', yy('Value', yy('Arr', $tmp)), yy('Value', yy('Literal', 'arguments')));
 
         break;
       }
@@ -57,7 +67,7 @@ class yy_Code extends yy_Base
       {
         $val = $ref = $param->as_reference($options);
 
-        if ($param->value)
+        if (isset($param->value) && $param->value)
         {
           $val = yy('Op', '?', $ref, $param->value);
         }
@@ -68,7 +78,7 @@ class yy_Code extends yy_Base
       {
         $ref = $param;
 
-        if ($param->value)
+        if (isset($param->value) && $param->value)
         {
           $lit = yy('Literal', $ref->name->value.' == null');
           $val = yy('Assign', yy('Value', $param->name), $param->value, '=');
@@ -79,7 +89,7 @@ class yy_Code extends yy_Base
 
       if ( ! (isset($splats) && $splats))
       {
-        $vars[] = $ref;
+        $params[] = $ref;
       }
     }
 
@@ -98,17 +108,38 @@ class yy_Code extends yy_Base
       }
     }
 
-    if ( ! (isset($splats) && $splats))
+    foreach ($params as $i => $p)
     {
-      foreach ($vars as $i => $v)
+      $options['scope']->parameter(($params[$i] = $p->compile($options)));
+    }
+
+    $uniqs = array();
+
+    foreach ($this->param_names() as $name)
+    {
+      if (in_array($name, $uniqs))
       {
-        $options['scope']->parameter(($vars[$i] = $v->compile($options)));
+        throw new SyntaxError("multiple parameters named $name");
       }
+
+      $uniqs[] = $name;
     }
 
     if ( ! ($was_empty || $this->no_return))
     {
       $this->body->make_return();
+    }
+
+    if ($this->bound)
+    {
+      if (isset($options['scope']->parent->method->bound) && $options['scope']->parent->method->bound)
+      {
+        $this->bound = $this->context = $options['scope']->parent->method->context;
+      }
+      else if ( ! (isset($this->static) && $this->static))
+      {
+        $options['scope']->parent->assign('_this', 'this');
+      }
     }
 
     $idt = $options['indent'];
@@ -119,7 +150,7 @@ class yy_Code extends yy_Base
       $code .= ' '.$this->name;
     }
 
-    $code .= '('.implode(', ', $vars).') {';
+    $code .= '('.implode(', ', $params).') {';
 
     if ( ! $this->body->is_empty())
     {
@@ -133,15 +164,22 @@ class yy_Code extends yy_Base
       return $this->tab.$code;
     }
 
-    if ($this->bound)
-    {
-      return utility('bind')."({$code}, {$this->context})";
-    }
-
     return ($this->front || $options['level'] >= LEVEL_ACCESS) ? "({$code})" : $code;
   }
 
-  function is_statement()
+  function param_names()
+  {
+    $names = array();
+
+    foreach ($this->params as $param)
+    {
+      $names = array_merge($names, (array) $param->names());
+    }
+
+    return $names;
+  }
+
+  function is_statement($options = NULL)
   {
     return !! $this->ctor;
   }

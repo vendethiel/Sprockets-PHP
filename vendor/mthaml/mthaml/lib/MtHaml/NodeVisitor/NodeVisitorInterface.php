@@ -13,6 +13,11 @@ use MtHaml\Node\Text;
 use MtHaml\Node\Comment;
 use MtHaml\Node\Doctype;
 use MtHaml\Node\Filter;
+use MtHaml\Node\ObjectRefClass;
+use MtHaml\Node\NodeAbstract;
+use MtHaml\Node\ObjectRefId;
+use MtHaml\Node\TagAttributeInterpolation;
+use MtHaml\Node\TagAttributeList;
 
 interface NodeVisitorInterface
 {
@@ -67,7 +72,20 @@ interface NodeVisitorInterface
     public function leaveTagAttributeName(TagAttribute $node);
     public function enterTagAttributeValue(TagAttribute $node);
     public function leaveTagAttributeValue(TagAttribute $node);
+    public function enterTagAttributeInterpolation(TagAttributeInterpolation $node);
+    public function leaveTagAttributeInterpolation(TagAttributeInterpolation $node);
+    public function enterTagAttributeList(TagAttributeList $node);
+    public function leaveTagAttributeList(TagAttributeList $node);
     public function leaveTagAttribute(TagAttribute $node);
+
+    public function enterObjectRefClass(ObjectRefClass $node);
+    public function leaveObjectRefClass(ObjectRefClass $node);
+    public function enterObjectRefId(ObjectRefId $node);
+    public function leaveObjectRefId(ObjectRefId $node);
+    public function enterObjectRefObject(NodeAbstract $node);
+    public function leaveObjectRefObject(NodeAbstract $node);
+    public function enterObjectRefPrefix(NodeAbstract $node);
+    public function leaveObjectRefPrefix(NodeAbstract $node);
 
     public function enterText(Text $node);
     public function leaveText(Text $node);

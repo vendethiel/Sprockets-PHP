@@ -9,7 +9,7 @@
  */
 
 ini_set('display_errors', '1');
-error_reporting(E_STRICT);
+error_reporting(E_ALL);
 
 // Test case to run
 $case = isset($_GET['case']) ? $_GET['case'] : FALSE;
@@ -24,21 +24,23 @@ if ($case)
     'tokens'  => array()
   );
 
+  require '../src/CoffeeScript/Init.php';
+  CoffeeScript\Init::load();
+
+  $options = array(
+    'filename' => $case,
+    'header'   => FALSE,
+    'rewrite'  => $PHP['rewrite'],
+    'tokens'   => & $PHP['tokens'],
+  );
+
   try
   {
-    require '../src/CoffeeScript/Init.php';
-
-    CoffeeScript\Init::requirements();
-
-    $PHP['js'] = CoffeeScript\Compiler::compile($PHP['coffee'], array(
-      'file'    => $case,
-      'rewrite' => $PHP['rewrite'],
-      'tokens'  =>  & $PHP['tokens'],
-    ));
+    $PHP['js'] = CoffeeScript\Compiler::compile($PHP['coffee'], $options);
   }
   catch (Exception $e)
   {
-    $PHP['error'] = get_class($e).': '.ucfirst($e->getMessage());
+    $PHP['error'] = $e->getMessage();
   }
 
   if ($PHP['tokens'])
@@ -57,7 +59,7 @@ if ($case)
   <title>Tests <?= $case ? "($case)" : '' ?></title>
 
   <? if ($case): ?>
-    <script src="js/lib/coffeescript_1.2.0.js"></script>
+    <script src="js/lib/coffeescript_1.3.1.js"></script>
     <script src="js/lib/diff.js"></script>
     <script src="js/main.js"></script>
     <script>window.addEventListener('load', function() { init(<?= json_encode($PHP) ?>); }, false);</script>

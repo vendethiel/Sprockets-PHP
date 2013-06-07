@@ -2,8 +2,6 @@
 
 namespace CoffeeScript;
 
-Init::init();
-
 class yy_Index extends yy_Base
 {
   public $children = array('index');
@@ -15,9 +13,9 @@ class yy_Index extends yy_Base
     return $this;
   }
 
-  function compile($options)
+  function compile($options, $level = NULL)
   {
-    return ($this->proto ? '.prototype' : '').'['.$this->index->compile($options, LEVEL_PAREN).']';
+    return '['.$this->index->compile($options, LEVEL_PAREN).']';
   }
 
   function is_complex()

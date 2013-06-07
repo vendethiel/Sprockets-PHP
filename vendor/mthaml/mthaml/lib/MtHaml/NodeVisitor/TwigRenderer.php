@@ -6,6 +6,11 @@ use MtHaml\Node\Insert;
 use MtHaml\Node\Run;
 use MtHaml\Node\InterpolatedString;
 use MtHaml\Node\Tag;
+use MtHaml\Node\ObjectRefClass;
+use MtHaml\Node\ObjectRefId;
+use MtHaml\Node\NodeAbstract;
+use MtHaml\Node\TagAttributeInterpolation;
+use MtHaml\Node\TagAttributeList;
 
 class TwigRenderer extends RendererAbstract
 {
@@ -75,7 +80,7 @@ class TwigRenderer extends RendererAbstract
 
     public function leaveTopBlock(Run $node)
     {
-        if ($node->hasChilds()) {
+        if ($node->isBlock()) {
             if (preg_match('~^(?:-\s*)?(\w+)~', $node->getContent(), $match)) {
                 $this->write($this->renderTag('end'.$match[1]));
             }
@@ -87,6 +92,53 @@ class TwigRenderer extends RendererAbstract
         $this->addDebugInfos($node);
         $this->write($this->renderTag($node->getContent()));
     }
+
+    public function enterObjectRefClass(ObjectRefClass $node)
+    {
+        if ($this->isEchoMode()) {
+            $this->raw('{{ ');
+        }
+        $this->raw('mthaml_object_ref_class(');
+
+        $this->pushEchoMode(false);
+    }
+
+    public function leaveObjectRefClass(ObjectRefClass $node)
+    {
+        $this->raw(')');
+
+        $this->popEchoMode(true);
+        if ($this->isEchoMode()) {
+            $this->raw(' }}');
+        }
+    }
+
+    public function enterObjectRefId(ObjectRefId $node)
+    {
+        if ($this->isEchoMode()) {
+            $this->raw('{{ ');
+        }
+        $this->raw('mthaml_object_ref_id(');
+
+        $this->pushEchoMode(false);
+    }
+
+    public function leaveObjectRefId(ObjectRefId $node)
+    {
+        $this->raw(')');
+
+        $this->popEchoMode(true);
+        if ($this->isEchoMode()) {
+            $this->raw(' }}');
+        }
+    }
+
+    public function enterObjectRefPrefix(NodeAbstract $node)
+    {
+        $this->raw(', ');
+    }
+
+
 
     protected function renderTag($content)
     {
@@ -130,11 +182,25 @@ class TwigRenderer extends RendererAbstract
                 $this->raw(', ');
             }
 
-            $this->raw('[');
-            $attr->getName()->accept($this);
-            $this->raw(', ');
-            $attr->getValue()->accept($this);
-            $this->raw(']');
+            if ($attr instanceof TagAttributeInterpolation) {
+                $this->raw('mthaml_attribute_interpolation(');
+                $attr->getValue()->accept($this);
+                $this->raw(')');
+            } else if ($attr instanceof TagAttributeList) {
+                $this->raw('mthaml_attribute_list(');
+                $attr->getValue()->accept($this);
+                $this->raw(')');
+            } else {
+                $this->raw('[');
+                $attr->getName()->accept($this);
+                $this->raw(', ');
+                if ($value = $attr->getValue()) {
+                    $attr->getValue()->accept($this);
+                } else {
+                    $this->raw('true');
+                }
+                $this->raw(']');
+            }
         }
 
         $this->raw(']');

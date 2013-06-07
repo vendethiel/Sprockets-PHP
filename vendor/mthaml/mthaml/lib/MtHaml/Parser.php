@@ -17,6 +17,10 @@ use MtHaml\Node\Run;
 use MtHaml\Node\Statement;
 use MtHaml\Node\NestInterface;
 use MtHaml\Node\Filter;
+use MtHaml\Node\ObjectRefClass;
+use MtHaml\Node\ObjectRefId;
+use MtHaml\Node\TagAttributeInterpolation;
+use MtHaml\Node\TagAttributeList;
 
 /**
  * MtHaml Parser
@@ -225,12 +229,15 @@ class Parser
             return;
         }
 
-        $line = substr($line, 0, -2);
+        $line = substr(rtrim($line), 0, -1);
 
         while ($next = $buf->peekLine()) {
-            if (trim($next) == '') continue;
+            if (trim($next) == '') {
+                $buf->nextLine();
+                continue;
+            }
             if (!$this->isMultiline($next)) break;
-            $line .= trim(substr($next, 0, -2));
+            $line .= substr(trim($next), 0, -1);
             $buf->nextLine();
         }
 
@@ -239,7 +246,7 @@ class Parser
 
     public function isMultiline($string)
     {
-        return ' |' === substr($string, -2);
+        return ' |' === substr(rtrim($string), -2);
     }
 
     /**
@@ -329,8 +336,39 @@ class Parser
 
             $node = new Comment($pos, $rendered, $condition);
 
-            if (null !== $nested = $this->parseNestableStatement($buf)) {
-                $node->setContent($nested);
+            if ($rendered) {
+                if (null !== $nested = $this->parseNestableStatement($buf)) {
+                    $node->setContent($nested);
+                }
+            } else {
+
+                if ('' !== $line = trim($buf->getLine())) {
+                    $content = new Text($buf->getPosition(), $line);
+                    $node->setContent($content);
+                }
+
+                while (null !== $next = $buf->peekLine()) {
+
+                    $indent = '';
+
+                    if ('' !== trim($next)) {
+                        $indent = $this->getIndentString(1, $next);
+                        if ('' === $indent) {
+                            break;
+                        }
+                        if (strpos($next, $indent) !== 0) {
+                            break;
+                        }
+                    }
+
+                    $buf->nextLine();
+
+                    if ('' !== trim($next)) {
+                        $buf->eatChars(strlen($indent));
+                        $str = new Text($buf->getPosition(), $buf->getLine());
+                        $node->addChild(new Statement($str->getPosition(), $str));
+                    }
+                }
             }
 
             return $node;
@@ -414,22 +452,67 @@ class Parser
             $attrs[] = $attr;
         }
 
-        // curly, ruby-like syntax
+        $hasRubyAttrs = false;
+        $hasHtmlAttrs = false;
+        $hasObjectRef = false;
 
-        if ($buf->match('/{\s*/A')) {
+        // accept ruby-attrs, html-attrs, and object-ref in any order,
+        // but only one of each
 
-            do {
-                $name = $this->parseAttrExpression($buf, '=,');
-
-                $buf->skipWs();
-                if (!$buf->match('/=>\s*/A')) {
-                    $this->syntaxErrorExpected($buf, "'=>'");
+        while (true) {
+            switch ($buf->peekChar()) {
+            case '{':
+                if ($hasRubyAttrs) {
+                    break 2;
                 }
+                $hasRubyAttrs = true;
+                $newAttrs = $this->parseTagAttributesRuby($buf);
+                $attrs = array_merge($attrs, $newAttrs);
+                break;
+            case '(':
+                if ($hasHtmlAttrs) {
+                    break 2;
+                }
+                $hasHtmlAttrs = true;
+                $newAttrs = $this->parseTagAttributesHtml($buf);
+                $attrs = array_merge($attrs, $newAttrs);
+                break;
+            case '[':
+                if ($hasObjectRef) {
+                    break 2;
+                }
+                $hasObjectRef = true;
+                $newAttrs = $this->parseTagAttributesObject($buf);
+                $attrs = array_merge($attrs, $newAttrs);
+                break;
+            default:
+                break 2;
+            }
+        }
 
-                $value = $this->parseAttrExpression($buf, ',');
+        return $attrs;
+    }
 
-                $attr = new TagAttribute($name->getPosition(), $name, $value);
-                $attrs[] = $attr;
+    protected function parseTagAttributesRuby($buf)
+    {
+        $attrs = array();
+
+        if ($buf->match('/\{\s*/')) {
+            do {
+                if ($expr = $this->parseInterpolation($buf)) {
+                    $attrs[] = new TagAttributeInterpolation($expr->getPosition(), $expr);
+                } else {
+                    $name = $this->parseAttrExpression($buf, '=,');
+
+                    $buf->skipWs();
+                    if (!$buf->match('/=>\s*/A')) {
+                        $attr = new TagAttributeList($name->getPosition(), $name);
+                    } else {
+                        $value = $this->parseAttrExpression($buf, ',');
+                        $attr = new TagAttribute($name->getPosition(), $name, $value);
+                    }
+                    $attrs[] = $attr;
+                }
 
                 $buf->skipWs();
                 if ($buf->match('/}/A')) {
@@ -445,29 +528,35 @@ class Parser
                     $buf->nextLine();
                     $buf->skipWs();
                 }
-
             } while (true);
         }
 
-        // html-like syntax
+        return $attrs;
+    }
+
+    protected function parseTagAttributesHtml($buf)
+    {
+        $attrs = array();
 
         if ($buf->match('/\(\s*/A')) {
-
             do {
-                if (!$buf->match('/[\w+:-]+/A', $match)) {
-                    $this->syntaxErrorExpected($buf, 'html attribute name');
+                if ($expr = $this->parseInterpolation($buf)) {
+                    $attrs[] = new TagAttributeInterpolation($expr->getPosition(), $expr);
+                } else if ($buf->match('/[\w+:-]+/A', $match)) {
+                    $name = new Text($match['pos'][0], $match[0]);
+
+                    if (!$buf->match('/\s*=\s*/A')) {
+                        $value = null;
+                    } else {
+                        $value = $this->parseAttrExpression($buf, ' ');
+                    }
+
+                    $attr = new TagAttribute($name->getPosition(), $name, $value);
+                    $attrs[] = $attr;
+
+                } else {
+                    $this->syntaxErrorExpected($buf, 'html attribute name or #{interpolation}');
                 }
-                $name = new Text($match['pos'][0], $match[0]);
-
-                $buf->skipWs();
-                if (!$buf->match('/=\s*/A')) {
-                    $this->syntaxErrorExpected($buf, "'='");
-                }
-
-                $value = $this->parseAttrExpression($buf, ' ');
-
-                $attr = new TagAttribute($name->getPosition(), $name, $value);
-                $attrs[] = $attr;
 
                 if ($buf->match('/\s*\)/A')) {
                     break;
@@ -486,6 +575,51 @@ class Parser
 
             } while (true);
         }
+
+        return $attrs;
+    }
+
+    protected function parseTagAttributesObject($buf)
+    {
+        $nodes = array();
+        $attrs = array();
+
+        if (!$buf->match('/\[\s*/A', $match)) {
+            return $attrs;
+        }
+
+        $pos = $match['pos'][0];
+
+        do {
+            if ($buf->match('/\s*\]\s*/A')) {
+                break;
+            }
+
+            list($expr, $pos) = $this->parseExpression($buf, ',\\]');
+            $nodes[] = new Insert($pos, $expr);
+
+            if ($buf->match('/\s*\]\s*/A')) {
+                break;
+            } else if (!$buf->match('/\s*,\s*/A')) {
+                $this->syntaxErrorExpected($buf, "',' or ']'");
+            }
+
+        } while (true);
+
+        list ($object, $prefix) = array_pad($nodes, 2, null);
+
+        if (!$object) {
+            return $attrs;
+        }
+
+        $class = new ObjectRefClass($pos, $object, $prefix);
+        $id = new ObjectRefId($pos, $object, $prefix);
+
+        $name = new Text($pos, 'class');
+        $attrs[] = new TagAttribute($pos, $name, $class);
+
+        $name = new Text($pos, 'id');
+        $attrs[] = new TagAttribute($pos, $name, $id);
 
         return $attrs;
     }
@@ -541,13 +675,13 @@ class Parser
                 | '(?: [^'\\\\]+ | \\\\['\\\\] )*'
 
                 # { ... } pair
-                | \{ (?: (?P>expr) | [$delims] )* \}
+                | \{ (?: (?P>expr) | [ $delims] )* \}
 
                 # ( ... ) pair
-                | \( (?: (?P>expr) | [$delims] )* \)
+                | \( (?: (?P>expr) | [ $delims] )* \)
 
                 # [ ... ] pair
-                | \[ (?: (?P>expr) | [$delims] )* \]
+                | \[ (?: (?P>expr) | [ $delims] )* \]
             )+)/xA";
 
         if ($buf->match($re, $match)) {
@@ -587,15 +721,6 @@ class Parser
                 )+/Ax';
         }
 
-        $exprRegex = '/
-            \#\{(?P<insert>(?P<expr>
-                [^\{\}"\']+
-                | \{ (?P>expr)* \}
-                | \'([^\'\\\\]+|\\\\[\'\\\\])*\'
-                | "([^"\\\\]+|\\\\["\\\\])*"
-            )+)\}
-            /AxU';
-
         do {
             if ($buf->match($stringRegex, $match)) {
                 $text = $match[0];
@@ -605,8 +730,7 @@ class Parser
                 }
                 $text = new Text($match['pos'][0], $text);
                 $node->addChild($text);
-            } else if ($buf->match($exprRegex, $match)) {
-                $expr = new Insert($match['pos']['insert'], $match['insert']);
+            } else if ($expr = $this->parseInterpolation($buf)) {
                 $node->addChild($expr);
             } else if ($quoted && $buf->match('/"/A')) {
                 break;
@@ -626,11 +750,37 @@ class Parser
         return $node;
     }
 
+    protected function parseInterpolation($buf)
+    {
+        // This matches an interpolation:
+        // #{ expr... }
+        $exprRegex = '/
+            \#\{(?P<insert>(?P<expr>
+                # do not allow {}"\' in expr
+                [^\{\}"\']+
+                # allow balanced {}
+                | \{ (?P>expr)* \}
+                # allow balanced \'
+                | \'([^\'\\\\]+|\\\\[\'\\\\])*\'
+                # allow balanced "
+                | "([^"\\\\]+|\\\\["\\\\])*"
+            )+)\}
+            /AxU';
+
+        if ($buf->match($exprRegex, $match)) {
+            return new Insert($match['pos']['insert'], $match['insert']);
+        }
+    }
+
     protected function parseNestableStatement($buf)
     {
-        if ($buf->match('/([&!]?)[=~]\s*/A', $match)) {
+        if ($buf->match('/([&!]?)(==?|~)\s*/A', $match)) {
 
-            $node = new Insert($match['pos'][0], $buf->getLine());
+            if ($match[2] == '==') {
+                $node = $this->parseInterpolatedString($buf, false);
+            } else {
+                $node = new Insert($match['pos'][0], $buf->getLine());
+            }
 
             if ($match[1] == '&') {
                 $node->getEscaping()->setEnabled(true);

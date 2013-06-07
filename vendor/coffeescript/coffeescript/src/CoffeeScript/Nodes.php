@@ -13,17 +13,18 @@ define('LEVEL_ACCESS',  6);
 
 define('TAB', '  ');
 
-define('IDENTIFIER',  '/^[$A-Za-z_\x7f-\x{ffff}][$\w\x7f-\x{ffff}]*$/u');
-define('IS_STRING',   '/^[\'"]/');
-define('SIMPLENUM',   '/^[+-]?\d+$/');
+define('IDENTIFIER_STR',  '[$A-Za-z_\x7f-\x{ffff}][$\w\x7f-\x{ffff}]*');
+define('IDENTIFIER',      '/^'.IDENTIFIER_STR.'$/u');
+define('IS_STRING',       '/^[\'"]/');
+define('SIMPLENUM',       '/^[+-]?\d+$/');
+define('METHOD_DEF',      '/^(?:('.IDENTIFIER_STR.')\.prototype(?:\.('.IDENTIFIER_STR.')|\[("(?:[^\\\\"\r\n]|\\\\.)*"|\'(?:[^\\\\\'\r\n]|\\\\.)*\')\]|\[(0x[\da-fA-F]+|\d*\.?\d+(?:[eE][+-]?\d+)?)\]))|('.IDENTIFIER_STR.')$/u');
 
 class Nodes {
 
-  static $utilities;
-
   static function multident($code, $tab)
   {
-    return preg_replace('/\n/', "\n{$tab}", $code);
+    $code = preg_replace('/\n/', "\n{$tab}", $code);
+    return preg_replace('/\s+$/', '', $code);
   }
 
   static function unfold_soak($options, $parent, $name)
@@ -39,50 +40,46 @@ class Nodes {
     return $ifn;
   }
 
-  static function utilities()
-  {
-    $utilities = array(
-      'hasProp' => 'Object.prototype.hasOwnProperty',
-      'slice'   => 'Array.prototype.slice'
-    );
-
-    $utilities['bind'] = <<<'BIND'
-function(fn, me){ return function(){ return fn.apply(me, arguments); }; }
-BIND;
-
-    $utilities['extends'] = <<<'EXTENDS'
-function(child, parent) {
-  for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
-  function ctor() { this.constructor = child; }
-  ctor.prototype = parent.prototype;
-  child.prototype = new ctor;
-  child.__super__ = parent.prototype;
-  return child;
-}
-EXTENDS;
-
-    $utilities['indexOf'] = <<<'INDEXOF'
-Array.prototype.indexOf || function(item) {
-  for (var i = 0, l = this.length; i < l; i++) {
-    if (this[i] === item) return i;
-  }
-  return -1;
-}
-INDEXOF;
-
-    return $utilities;
-  }
-
   static function utility($name)
   {
-    if ( ! isset(self::$utilities))
-    {
-      self::$utilities = self::utilities();
-    }
-
-    Scope::$root->assign($ref = "__$name", self::$utilities[$name]);
+    Scope::$root->assign($ref = "__$name", call_user_func(array(__CLASS__, "utility_$name")));
 
     return $ref;
+  }
+
+  static function utility_bind()
+  {
+    return 'function(fn, me){ return function(){ return fn.apply(me, arguments); }; }';
+  }
+
+  static function utility_extends()
+  {
+    return 'function(child, parent) { '
+    . 'for (var key in parent) { '
+    . 'if ('.self::utility('hasProp').'.call(parent, key)) '
+    .   'child[key] = parent[key]; '
+    . '} '
+    . 'function ctor() { '
+    .   'this.constructor = child; '
+    . '} '
+    . 'ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; '
+    . 'return child; '
+    . '}';
+  }
+
+  static function utility_hasProp()
+  {
+    return '{}.hasOwnProperty';
+  }
+
+  static function utility_indexOf()
+  {
+    return '[].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; }';
+  }
+
+  static function utility_slice()
+  {
+    return '[].slice';
   }
 
   /**

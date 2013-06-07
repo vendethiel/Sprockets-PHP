@@ -2,11 +2,11 @@
 
 namespace CoffeeScript;
 
-Init::init();
-
 class yy_In extends yy_Base
 {
   public $children = array('object', 'array');
+
+  public $negated = NULL;
 
   function constructor($object = NULL, $array = NULL)
   {
@@ -20,16 +20,33 @@ class yy_In extends yy_Base
   {
     if ($this->array instanceof yy_Value && $this->array->is_array())
     {
-      return $this->compile_or_test($options);
+      $has_splat = FALSE;
+
+      foreach ($this->array->base->objects as $obj)
+      {
+        if ($obj instanceof yy_Splat)
+        {
+          $has_splat = TRUE;
+          break;
+        }
+      }
+
+      if ( ! $has_splat)
+      {
+        return $this->compile_or_test($options);
+      }
     }
-    else
-    {
-      return $this->compile_loop_test($options);
-    }
+
+    return $this->compile_loop_test($options);
   }
 
   function compile_or_test($options)
   {
+    if (count($this->array->base->objects) === 0)
+    {
+      return $this->negated ? 'true' : 'false';
+    }
+
     list($sub, $ref) = $this->object->cache($options, LEVEL_OP);
     list($cmp, $cnj) = $this->negated ? array(' !== ', ' && ') : array(' === ', ' || ');
 
@@ -37,11 +54,12 @@ class yy_In extends yy_Base
 
     foreach ($this->array->base->objects as $i => $item)
     {
-      $tests[] = ($i ? $ref : $sub).$cmp.$item->compile($options, LEVEL_OP);
+      $tests[] = ($i ? $ref : $sub).$cmp.$item->compile($options, LEVEL_ACCESS);
     }
 
-    if (count($tests) === 0)
+    if ( ! $tests)
     {
+      // In JavaScript '' + false gives 'false', not so in PHP
       return 'false';
     }
 

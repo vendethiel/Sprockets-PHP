@@ -15,6 +15,8 @@ use MtHaml\Exception;
 use MtHaml\Node\NodeAbstract;
 use MtHaml\Node\NestInterface;
 use MtHaml\Node\Run;
+use MtHaml\Node\TagAttributeInterpolation;
+use MtHaml\Node\TagAttributeList;
 
 abstract class RendererAbstract extends NodeVisitorAbstract
 {
@@ -41,6 +43,7 @@ abstract class RendererAbstract extends NodeVisitorAbstract
      * argument passing).
      */
     protected $echoMode = true;
+    protected $echoModeStack = array();
 
     public function __construct(Environment $env)
     {
@@ -128,7 +131,11 @@ abstract class RendererAbstract extends NodeVisitorAbstract
             $nameNode = $attr->getName();
             $valueNode = $attr->getValue();
 
-            if (!$nameNode->isConst() || !$valueNode->isConst()) {
+            if ($attr instanceof TagAttributeList) {
+                $hasDynAttr = true;
+                break;
+            }
+            if ($nameNode && (!$nameNode->isConst() || !$valueNode || !$valueNode->isConst())) {
                 $hasDynAttr = true;
                 break;
             }
@@ -173,6 +180,11 @@ abstract class RendererAbstract extends NodeVisitorAbstract
     public function leaveTagAttributeValue(TagAttribute $node)
     {
         $this->raw('"');
+    }
+
+    public function enterTagAttributeInterpolation(TagAttributeInterpolation $node)
+    {
+        $this->raw(' ');
     }
 
     public function leaveTag(Tag $node)
@@ -240,7 +252,8 @@ abstract class RendererAbstract extends NodeVisitorAbstract
 
     public function enterDoctype(Doctype $node)
     {
-        $this->write($node->getDoctype($this->env->getOption('format')));
+        $doctype = $node->getDoctype($this->env->getOption('format'));
+        $this->write($this->escapeLanguage($doctype));
     }
 
     public function enterComment(Comment $comment)
@@ -544,6 +557,17 @@ abstract class RendererAbstract extends NodeVisitorAbstract
     public function isEchoMode()
     {
         return $this->echoMode;
+    }
+
+    public function pushEchoMode($enabled)
+    {
+        $this->echoModeStack[] = $this->echoMode;
+        $this->setEchoMode($enabled);
+    }
+
+    public function popEchoMode()
+    {
+        $this->echoMode = array_pop($this->echoModeStack);
     }
 }
 
