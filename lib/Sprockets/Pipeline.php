@@ -118,7 +118,7 @@ class Pipeline
 		$directory = $this->getOption('CACHE_DIRECTORY') . 'assets/';
 
 		if (!file_exists($directory))
-			mkdir($directory, 777, true);
+			mkdir($directory, 0777, true);
 		
 		return $directory;
 	}
