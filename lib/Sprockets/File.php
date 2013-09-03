@@ -214,9 +214,15 @@ class File
 			return $code;
 		}
 
-		if ($this->locator->hasFile($file = $this->directory . $name, $this->type))
+		$basename = $name[0] == '/'
+		// handle absolute paths
+		 ? substr($name, 1)
+		// remove "./" prefix from path
+		 : $this->directory . str_replace('./', '/', $name);
+
+		if ($this->locator->hasFile($file = $basename, $this->type))
 			return (string) new File($file . '.' . $this->type, $this->vars);
-		else if ($this->locator->hasFile($index_file = $this->directory . $name . '/index', $this->type))
+		else if ($this->locator->hasFile($index_file = $basename . '/index', $this->type))
 			return (string) new File($index_file . '.' . $this->type, $this->vars);
 		else
 			throw new Exception\FileNotFound($file, $this->type);

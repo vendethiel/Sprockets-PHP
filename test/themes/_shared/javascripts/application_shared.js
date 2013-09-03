@@ -2,5 +2,5 @@
  *= require jquery/jquery
  *
  *= require form
- *= require_directory form/validate
+ *= require_directory form/inputs
  */

@@ -44,3 +44,20 @@ if (!function_exists('vdump'))
 		exit;
 	}
 }
+
+if (!function_exists('camelize'))
+{
+	function camelize($s)
+	{
+		$s=str_replace('_',' ',$s);
+		$s=ucwords($s);
+		return str_replace(' ','',$s);
+	}
+}
+if (!function_exists('pascalize'))
+{
+	function pascalize($s)
+	{
+		return lcfirst(camelize($s));
+	}
+}

@@ -320,7 +320,7 @@ class Locator
 
 			foreach ($path['directories'] as $directory)
 			{
-				$files = glob($e=trim($directory, '/') . '/' . $prefix . substr($name . '.' . $ext, 0, -1) . '*');
+				$files = glob(rtrim($directory, '/') . '/' . $prefix . substr($name . '.' . $ext, 0, -1) . '*');
 
 				if ($files)
 				{
@@ -331,7 +331,7 @@ class Locator
 				}
 			}
 		}
-		
+
 		return null;
 	}
 	
