@@ -7,13 +7,13 @@
     "url": "git://github.com/Nami-Doc/Sprockets-PHP"
   },
   "dependencies": {
-    "LiveScript": "~1.1",
+    "LiveScript": "~1.2.0",
     
-    "esmangle": "~0.0",
+    "esmangle": "~0.0.15",
 
-    "stylus": "~0.31",
+    "stylus": "~0.38.0",
     "nib": "~0.7",
 
-    "clean-css": "~0.9"
+    "clean-css": "~1.0.0"
   }
 }
