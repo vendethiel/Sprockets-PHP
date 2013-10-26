@@ -55,7 +55,7 @@ The argument is the array of "base paths" from where the Pipeline has to search 
 
 If you want to call directly the Pipeline, you can then do `$pipeline($asset_type)`.
 For example `$pipeline('css');`.
-The CMS will load `application.css` in one of the base paths.
+The framework will load `application.css` in one of the base paths.
 This file must contain "directives", like Sprockets's one.
 
 ```php
