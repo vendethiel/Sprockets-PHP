@@ -78,7 +78,7 @@ class Cache
 
 		$this->writeDependenciesFile();
 		file_put_contents($this->getFilename(), $content);
-#		file_put_contents($this->getFilename().'.gz', gzcompress($content));
+#		file_put_contents($this->getFilename() . '.gz', gzcompress($content));
 	}
     
 	private function writeDependenciesFile()

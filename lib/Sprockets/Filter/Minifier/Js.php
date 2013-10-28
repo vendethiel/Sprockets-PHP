@@ -2,7 +2,8 @@
 namespace Sprockets\Filter\Minifier;
 
 /**
- * node:uglify-js2
+ * Uglify-JS2
+ * node:uglify-js
  */
 class Js extends Base
 {
@@ -22,16 +23,17 @@ class Js extends Base
 
 #		$files_instruction = implode(' ', array_map(function ($file) { return '"' . $file . '"';}, array_values($files)));
 
-		$out = $this->processNode(array('esmangle/bin/esmangle', $cache_file, '--output', $js_cache_file));
+		$out = $this->processNode(array('uglify-js/bin/uglifyjs', $cache_file, '--output', $js_cache_file));
 
 		if (!file_exists($js_cache_file))
 		{
-			echo "ESmangle Minification Error<pre>" . str_replace($cache_file, $js_cache_file, $out) . "</pre>";
+			echo "UglifyJS2 Minification Error<pre>" . str_replace($cache_file, $js_cache_file, $out) . "</pre>";
 
 			@unlink($log);
 			exit;
 		}
 
-		return file_get_contents(str_ireplace(array('c:/', 'c:\\'), 'file://C:/', $js_cache_file));
+		// wtf is that ireplace crap
+		return file_get_contents($js_cache_file);
 	}
 }

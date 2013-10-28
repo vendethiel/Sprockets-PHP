@@ -10,6 +10,7 @@
     "LiveScript": "~1.2.0",
     
     "esmangle": "~0.0.15",
+    "uglify-js": "~2.4.1",
 
     "stylus": "~0.38.0",
     "nib": "~0.7",

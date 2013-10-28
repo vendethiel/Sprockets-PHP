@@ -90,7 +90,7 @@ $filename = $cache->getFilename();
 
 ## Asset Paths
 
-The asset paths are divided by "modules", allowing you for the greatest modularity :
+The asset paths are divided by "modules" to be as flexible as it can :
 
 ```json
 {
