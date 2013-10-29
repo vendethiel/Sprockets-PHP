@@ -30,7 +30,8 @@ class Locator
 		}
 	}
 
-	public function __destruct()
+	// Calling file_put_contents within a destructor will cause the file to be written in SERVER_ROOT...
+	public function save()
 	{
 		if (self::$file_added)
 			file_put_contents($this->getFileListName(), '<?php return ' . var_export(self::$files[$this->prefix], true) . ';');
