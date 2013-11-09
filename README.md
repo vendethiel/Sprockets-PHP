@@ -45,7 +45,7 @@ class @Form.Inputs.Password extends @Form.BaseInput
   -> console.log <[base password]>
 ```
 
-It's primary meant to deal with JS and CSS but can as well be used for HTML (HAML, Twig, Slim...).
+It's primarily meant to deal with JS and CSS but can as well be used for HTML (HAML, Twig, Slim...).
 You can add your own filters in a very flexible way (see below).
 
 # How can I use it ?!
@@ -139,6 +139,16 @@ Only the "meaningful" extension matters (using a whitelist).
  * and the "coffee" filter will be correctly applied.
  */
 ```
+
+## Options
+Here are the options and their default values :
+```php
+      'NODE_PATH' => 'node',
+      'NPM_PATH' => __DIR__ . '/../../node_modules/',
+      'CACHE_DIRECTORY' => 'cache/',
+```
+
+Just pass them along in paths.
 
 ## Caching
 Something to note : even if you're not using `Sprockets\Cache`, the asset pipeline will keep a file list cache in your cache directory, to speed up path lookups.
