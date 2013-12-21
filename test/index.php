@@ -1,9 +1,7 @@
 <?php
 function vardump(){echo'<pre>';$e=func_get_args();foreach($e as $a)var_dump($a);}
 function vdump(){call_user_func_array('vardump',func_get_args());exit;}
-function __autoload($s) {
-	$path = '../lib/' . str_replace(array('_', '\\'), '/', $s) . '.php';
-	if (file_exists($path)) return require $path; else return false; }
+require '../vendor/autoload.php';
 
 
 // read paths.json - see below
