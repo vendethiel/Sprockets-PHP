@@ -19,5 +19,5 @@
       "vendor/components/"
     ]
   },
-  "CACHE_DIRECTORY": "my_cache/my_dir/"
+  "CACHE_DIRECTORY": "_my_cache/my_dir/"
 }

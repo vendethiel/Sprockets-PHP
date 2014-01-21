@@ -1,9 +1,0 @@
-themes/MyTemplate/javascripts/application.js:1382874153
-themes/_shared/javascripts/application_shared.js:1382874153
-lib/assets/javascripts/jquery/jquery.js:1378204378
-themes/_shared/javascripts/form/index.js.ls:1382874153
-themes/_shared/javascripts/absolute_path.js:1378204525
-themes/_shared/javascripts/form/validators.js:1378204450
-themes/_shared/javascripts/form/inputs/range.js.ls:1382874153
-themes/_shared/javascripts/form/inputs/text.js.coffee:1382874153
-themes/MyTemplate/javascripts/fetch_state.js:1382874153

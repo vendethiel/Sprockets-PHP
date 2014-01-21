@@ -15,4 +15,12 @@ $pipeline = new Sprockets\Pipeline($paths);
 $js = new Sprockets\Cache($pipeline, 'js');
 $css = new Sprockets\Cache($pipeline, 'css');
 
-echo (string) $js, "\n", $css->getContent();
+function expect($type, $actual)
+{
+	$expect = file_get_contents('_expect/expect.' . $type);
+	if ($expect === $actual)
+		return print("$type : Test passed                                                      <br>\n");
+	echo "ERROR : Expected <pre>$expect</pre>, got <pre>$actual</pre>";
+}
+expect('js', $js->getContent());
+expect('css', $css->getContent());
