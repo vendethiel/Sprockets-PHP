@@ -229,3 +229,27 @@ You can also inherit `Sprockets\Filter\Base` which gives you access to :
  - `$this->pipeline` current pipeline instance
  - `$this->processNode()` passing an argument array, auto-quoted, like this : `array('modulename/bin/mod', '-c', $file))`
    Note that the first argument gets the `NODE_MODULES_PATH` prepended automatically.
+
+# Running Tests
+
+To run the tests you need to first install the dependencies. You do this
+via composer with the following command:
+
+    php composer.phar install
+
+Once that is done you just need to run the "index.php" file in the test
+directory. The easiest way to do this is to use the built-in PHP
+webserver.
+
+    cd test
+    php -S localhost:5000
+
+Then in your web browser visit:
+
+    http://localhost:5000/index.php
+
+Alternatively you can just run the tests from the command line although
+the output will contain a few HTML tags:
+
+    cd test
+    php index.php
