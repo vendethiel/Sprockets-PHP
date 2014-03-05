@@ -26,8 +26,13 @@ class Scss extends Base
 			else
 				$filename = $dir . '/' . $match[1];
 
+			$underscored = '_'.basename($filename);
+			$underscored = dirname($filename).'/'.$underscored;
+
 			if ($this->pipeline->locator->hasFile($filename, 'css'))
 				$file = new File($filename . '.css');
+			else if ($this->pipeline->locator->hasFile($underscored, 'css'))
+				$file = new File($underscored . '.css');
 			else if ($this->pipeline->locator->hasFile($index_file = $filename . '/index', 'css'))
 				$file = new File($index_file . '.css');
 			else
