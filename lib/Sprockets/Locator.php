@@ -321,14 +321,14 @@ class Locator
 
 			foreach ($path['directories'] as $directory)
 			{
-				$files = glob(rtrim($directory, '/') . '/' . $prefix . substr($name . '.' . $ext, 0, -1) . '*');
+				$files = glob(rtrim($directory, '/') . '/' . $prefix . $name . '.*');
 
 				if ($files)
 				{
-					self::$files[$this->prefix][$ext][$name] = $files[0];
+					self::$files[$this->prefix][$ext][$name] = end($files);
 					self::$file_added = true;
 
-					return $files[0];
+					return self::$files[$this->prefix][$ext][$name];
 				}
 			}
 		}
