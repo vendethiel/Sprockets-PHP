@@ -26,12 +26,12 @@ class Scss extends Base
 			else
 				$filename = $dir . '/' . $match[1];
 
-			if ($this->pipeline->hasFile($filename, 'css'))
+			if ($this->pipeline->locator->hasFile($filename, 'css'))
 				$file = new File($filename . '.css');
-			else if ($this->pipeline->hasFile($index_file = $filename . '/index', 'css'))
+			else if ($this->pipeline->locator->hasFile($index_file = $filename . '/index', 'css'))
 				$file = new File($index_file . '.css');
 			else
-				throw new Exception\FileNotFound($file, 'css');
+				throw new \Sprockets\Exception\FileNotFound($file, 'css');
 
 			return '@import "' . str_replace('//', '/', $file->getFilepath()) . '"';
 		}, $content);
