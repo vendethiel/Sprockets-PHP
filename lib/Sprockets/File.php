@@ -80,8 +80,6 @@ class File
 		if (!$this->isAsset())
 			return $content; //no directives
 
-		if (!$content)
-			vdump($this->filepath);
 		return $this->processDirectives($content);
 	}
 
@@ -101,13 +99,7 @@ class File
 	public function __toString()
 	{
 		try {
-			$e = $this->process();
-			if (empty($e) || !is_string($e))
-			{
-				debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-				vdump($e, $this->filters, $this->getFilepath(), file_get_contents($this->getFilepath()));
-			}
-			return $e;
+			return $this->process();
 		} catch (Exception\Asset $e) {
 			exit('Asset exception (' . $this->getFilepath() . ') : ' . $e->getMessage());
 		} catch (\Exception $e) {
