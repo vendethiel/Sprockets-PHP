@@ -12,9 +12,6 @@ $paths = json_decode($paths, true);
 // create a pipeline
 $pipeline = new Sprockets\Pipeline($paths);
 
-$js = new Sprockets\Cache($pipeline, 'js');
-$css = new Sprockets\Cache($pipeline, 'css');
-
 function expect($type, $actual)
 {
 	$expect = str_replace("\r", '', trim(file_get_contents('_expect/expect.' . $type)));
@@ -43,5 +40,5 @@ function expect($type, $actual)
 	file_put_contents('_results/expect.'.$type, $expect);
 	file_put_contents('_results/got.'.$type, $actual);
 }
-expect('js', $js->getContent());
-expect('css', $css->getContent());
+expect('js', $pipeline('js'));
+expect('css', $pipeline('css'));

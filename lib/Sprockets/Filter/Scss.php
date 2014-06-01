@@ -5,7 +5,7 @@ use Sprockets\File;
 
 class Scss extends Base
 {
-	private $parser;
+	protected $parser;
 
 	public function __construct()
 	{
@@ -19,6 +19,7 @@ class Scss extends Base
 	
 	public function __invoke($content, $file, $dir, $vars)
 	{
+		var_dump($file, $content);
 		$content = preg_replace_callback('/@import\s+["\']([a-z0-9\/]+)["\']/i', function ($match) use ($dir)
 		{
 			if ($match[1] == '/')

@@ -2,12 +2,15 @@ body {
   background-url: url(../../themes/_shared/images/fake.png);
 }
 
-body {
+.inline {
+  display: inline; }
+
+	body {
   color: '#FFF'; }
 
 
 body {
   font-family: "Using sass"; }
 
-
-
+.foo {
+	color: red }

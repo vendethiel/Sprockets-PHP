@@ -1,10 +1,8 @@
 <?php
 namespace Sprockets\Filter;
 
-class Sass extends Base
+class Sass extends Scss
 {
-	private $parser;
-
 	public function __construct()
 	{
 		$previous_error_reporting = error_reporting();
@@ -14,9 +12,6 @@ class Sass extends Base
 		
 		error_reporting($previous_error_reporting);
 	}
-	
-	public function __invoke($content, $file, $dir, $vars)
-	{
-		return $this->parser->toCss($content, false);
-	}
+
+	// __invoke inherited from \Sprockets\Filter\Scss
 }

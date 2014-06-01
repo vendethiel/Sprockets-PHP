@@ -15,7 +15,6 @@ class Less extends Base
 		foreach ($this->pipeline->getLocator()->getDirectoriesFor('css') as $dir)
 			$this->parser->addImportDir($dir);
 
-
 		return $this->parser;
 	}
 	
