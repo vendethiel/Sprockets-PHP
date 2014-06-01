@@ -1,1 +1,4 @@
+/*
+ *= require ./empty
+ */
 jQuery();
