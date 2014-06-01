@@ -202,6 +202,8 @@ class Pipeline
 	 */
 	public function getDependencies($type)
 	{
+		if (!isset($this->dependencies[$type]))
+			return array();
 		return array_keys($this->dependencies[$type]);
 	}
 

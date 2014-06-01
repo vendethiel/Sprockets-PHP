@@ -5,7 +5,7 @@ body {
 .inline {
   display: inline; }
 
-	body {
+body {
   color: '#FFF'; }
 
 
@@ -13,4 +13,4 @@ body {
   font-family: "Using sass"; }
 
 .foo {
-	color: red }
+  color: red; }
