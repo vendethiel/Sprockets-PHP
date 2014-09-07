@@ -13,6 +13,7 @@ class Cache
 		$this->options = array_merge(array(
 			'cache_directory' => $pipeline->getOption('CACHE_DIRECTORY'),
 			'minify' => false,
+			'manifest' => null,
 		), $options);
 	}
 	
@@ -67,7 +68,7 @@ class Cache
 	{
 		$pipeline = $this->pipeline; //__invoke won't with "$this->pipeline()"
 	
-		list($files, $content) = $pipeline($this->type, null, $this->vars, true); //full=true
+		list($files, $content) = $pipeline($this->type, $this->options['manifest'], $this->vars, true); //full=true
 
 		if (!empty($this->options['minify'])
 		 && class_exists($class = 'Sprockets\Filter\Minifier\\' . ucfirst($this->type)))

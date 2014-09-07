@@ -12,7 +12,7 @@ class Pipeline
 
 	private $extensions,
 		$dependencies,
-		$main_file_name = 'application',
+		$manifest_name = 'application',
 		$prefix,
 		$registered_files = array(),
 		$options = array();
@@ -39,7 +39,7 @@ class Pipeline
 	 * Runs the pipeline
 	 *
 	 * @param string $type asset type
-	 * @param string $main_file main file, "application.$type" by default
+	 * @param string $manifest main file, "application.$type" by default
 	 * @param array $vars context for the pipeline (vars you pass to templates)
 	 * @param bool $full True if you want an array containing file list and content
 	 *
@@ -47,18 +47,18 @@ class Pipeline
 	 *
 	 * @api
 	 */
-	public function process($type, $main_file = null, $vars = array(), $full = false)
+	public function process($type, $manifest = null, $vars = array(), $full = false)
 	{
 		if (self::$current_instance)
 			throw new \RuntimeException('There is still a Pipeline instance running');
 		self::$current_instance = $this;
 		
-		if ($main_file) //this if is why $this->main_file_name is used for File::__construct() below
-			$this->main_file_name = $main_file;
+		if ($manifest) //this if is why $this->manifest_name is used for File::__construct() below
+			$this->manifest_name = $manifest;
 		
 		$this->registered_files[$type] = array();
 
-		$content = (string) new File($this->main_file_name . '.' . $type, $vars);
+		$content = (string) new File($this->manifest_name . '.' . $type, $vars);
 		
 		self::$current_instance = null;
 		
@@ -141,7 +141,7 @@ class Pipeline
 	 */
 	public function getMainFile($type)
 	{
-		return $this->locator->getFile($this->main_file_name, $type);
+		return $this->locator->getFile($this->manifest_name, $type);
 	}
 
 	/**
