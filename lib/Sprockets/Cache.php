@@ -67,13 +67,14 @@ class Cache
 	private function write()
 	{
 		$pipeline = $this->pipeline; //__invoke won't with "$this->pipeline()"
-	
+
 		list($files, $content) = $pipeline($this->type, $this->options['manifest'], $this->vars, true); //full=true
 
 		if (!empty($this->options['minify'])
 		 && class_exists($class = 'Sprockets\Filter\Minifier\\' . ucfirst($this->type)))
 		{
 			$minified = new $class;
+			$minified->setPipeline($pipeline);
 			$content = $minified($files, $content);
 		}
 

@@ -30,14 +30,12 @@ class File
 
 		$this->path_with_simple_filename = ('' === $this->directory ? '' : $this->directory . '/') . $this->name;
 		$this->filepath = $this->locator->getFile($this->path_with_simple_filename, $this->type);
+		$this->full_filename = basename($this->filepath);
 
 		if (!$this->type)
 			vdump($this->type, $path, 'no type');
 
-		$full_filename = explode('/', $this->filepath);
-		$this->full_filename = end($full_filename);
 		$full_filename_parts = explode('.', $this->full_filename);
-
 		$this->filters = array_reverse(array_slice($full_filename_parts, $i + 1)); //['less', 'php'] => ['php', 'less']
 
 		if (in_array($this->type, array('html', 'css', 'js')))

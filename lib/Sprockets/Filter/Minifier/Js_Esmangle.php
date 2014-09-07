@@ -4,7 +4,7 @@ namespace Sprockets\Filter\Minifier;
 /**
  * node:esmangle
  */
-class Js extends Base
+class __Js extends Base
 {
 	public function __invoke($files, $content)
 	{

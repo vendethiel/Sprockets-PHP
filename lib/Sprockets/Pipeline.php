@@ -55,7 +55,7 @@ class Pipeline
 		
 		if ($manifest) //this if is why $this->manifest_name is used for File::__construct() below
 			$this->manifest_name = $manifest;
-		
+
 		$this->registered_files[$type] = array();
 
 		$content = (string) new File($this->manifest_name . '.' . $type, $vars);
@@ -235,7 +235,7 @@ class Pipeline
 	{
 		if (!isset(self::$filters[$name]))
 		{
-			$class = isset($this->extensions[$name]) ? $this->extensions[$name] : 'Sprockets\Filter\\' . ucfirst($name);
+			$class = $this->getFilterClass($name);
 			self::$filters[$name] = new $class;
 			self::$filters[$name]->setPipeline($this);
 		}
@@ -243,6 +243,20 @@ class Pipeline
 		return self::$filters[$name];
 	}
 	
+	/**
+	 * finds filter class
+	 */
+	private function getFilterClass($name)
+	{
+		if (isset($this->extensions[$name]))
+			return $this->extensions[$name];
+
+		if (class_exists($class = 'Sprockets\Filter\\' . ucfirst($name)))
+			return $class;
+
+		return false;
+	}
+
 	/**
 	 * apply a filter
 	 * used for singletonization of filters

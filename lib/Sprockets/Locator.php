@@ -94,7 +94,8 @@ class Locator
 	/**
 	 * reads name and extension for a file name
 	 *
-	 * @example getNameAndExtension('jQuery.datatables.js.coffee') => ['jQuery.datatables', 'js', 2]
+	 * @example getNameAndExtension('jQuery.datatables.js.coffee.php')
+	 *   	=> ['jQuery.datatables', 'js', ['php', 'coffee']]
 	 * @todo I'd like to avoid hardcoding every single extension I may need at some point.
 	 *       the easiest must be if (!$type) $type = $filename_parts[1];
 	 */
@@ -106,6 +107,7 @@ class Locator
 
 		$filename_parts = explode('.', $name);
 		$name_parts = array();
+		$filters = array();
 
 		/**
 		 * NOTE:
@@ -123,7 +125,10 @@ class Locator
 				break;
 			}
 
-			$name_parts[] = $p;
+			if (isset($type)) // we're collecting extensions
+				; // TODO: collect extensions
+			else
+				$name_parts[] = $p;
 		}
 
 		$name = implode('.', $name_parts);
@@ -308,6 +313,7 @@ class Locator
 	{
 		if (null === $ext)
 			$ext = $this->default_ext;
+		$basename = basename($name);
 		$type = $this->getTypeForExt($ext);
 
 		if (isset(self::$files[$this->prefix][$type][$name])
@@ -322,10 +328,17 @@ class Locator
 			foreach ($path['directories'] as $directory)
 			{
 				$files = glob(rtrim($directory, '/') . '/' . $prefix . $name . '.*');
+				if (!$files) // no file found
+					continue;
 
-				if ($files)
+				foreach ($files as $file)
 				{
-					self::$files[$this->prefix][$ext][$name] = end($files);
+					list($found_name, $found_ext) = $this->getNameAndExtension($file);
+					
+					if ($basename != basename($found_name) || $ext != $found_ext)
+						continue;
+
+					self::$files[$this->prefix][$ext][$name] = $file;
 					self::$file_added = true;
 
 					return self::$files[$this->prefix][$ext][$name];
