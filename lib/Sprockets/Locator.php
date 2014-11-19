@@ -103,7 +103,7 @@ class Locator
 	{
 		static $extensions = array('js', 'html', 'css', 'txt',
 			'png', 'gif', 'jpg', 'jpeg',
-			'otf', 'ttf');
+			'otf', 'eot', 'ttf');
 
 		$filename_parts = explode('.', $name);
 		$name_parts = array();
