@@ -85,8 +85,9 @@ class Locator
 				return 'img';
 
 			case 'otf':
-			case 'ttf':
 			case 'eot':
+			case 'woff':
+			case 'ttf':
 				return 'font';
 		}
 		return $ext;
@@ -104,7 +105,7 @@ class Locator
 	{
 		static $extensions = array('js', 'html', 'css', 'txt',
 			'png', 'gif', 'jpg', 'jpeg',
-			'otf', 'eot', 'ttf');
+			'otf', 'eot', 'woff', 'ttf');
 
 		$filename_parts = explode('.', $name);
 		$name_parts = array();
