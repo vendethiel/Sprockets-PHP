@@ -86,6 +86,7 @@ class Locator
 
 			case 'otf':
 			case 'ttf':
+			case 'eot':
 				return 'font';
 		}
 		return $ext;
