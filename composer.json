@@ -1,5 +1,5 @@
 {
-    "name": "Nami-Doc/Sprockets-PHP",
+    "name": "vendethiel/sprockets-php",
     "description": "Sprockets-PHP is Sprockets (Rails Asset Pipeline) for PHP",
     "autoload": {
         "psr-0": {
