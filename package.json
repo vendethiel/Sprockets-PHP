@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "LiveScript": "~1.2.0",
+    "coffee-script": "~1.9.1",
     
     "esmangle": "~0.0.15",
     "uglify-js": "~2.4.1",
