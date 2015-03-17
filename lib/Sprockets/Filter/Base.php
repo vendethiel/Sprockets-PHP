@@ -5,6 +5,8 @@ abstract class Base
 {
 	protected $pipeline, $locator;
 
+	abstract public function __invoke($content, $file, $dir, $vars);
+
 	public function setPipeline($pipeline)
 	{
 		$this->pipeline = $pipeline;

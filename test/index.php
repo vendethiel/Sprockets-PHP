@@ -9,8 +9,17 @@ require __DIR__.'/../vendor/autoload.php';
 $paths = str_replace('%template%', 'MyTemplate', file_get_contents(__DIR__.'/paths.json'));
 $paths = json_decode($paths, true);
 
+class MeowFilter extends Sprockets\Filter\Base
+{
+	public function __invoke($content, $file, $dir, $vars)
+	{
+		return 'meow';
+	}
+}
+
 // create a pipeline
 $pipeline = new Sprockets\Pipeline($paths);
+$pipeline->registerFilter('meow', 'MeowFilter');
 
 function expect($type, $actual)
 {

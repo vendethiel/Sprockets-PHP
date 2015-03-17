@@ -100,6 +100,7 @@ class Pipeline
 
 	/**
 	 * registers a special extension
+	 * the class must be an instance of \Sprockets\Filter\Base
 	 *
 	 * @example registerFilter('md', 'Sprockets\Filter\Markdown');
 	 *
@@ -113,6 +114,9 @@ class Pipeline
 		$this->extensions[strtolower($ext)] = $class;
 	}
 
+	/**
+	 * @return string the cache directory used by Sprockets
+	 */
 	public function getCacheDirectory()
 	{
 		$directory = $this->getOption('CACHE_DIRECTORY') . 'assets/';

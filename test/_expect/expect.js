@@ -48,3 +48,5 @@ setInterval(function () {
     stateImg.src = data
   })
 }, 500)
+
+meow
