@@ -12,7 +12,7 @@ class Pipeline
 
 	private $extensions,
 		$dependencies,
-		$manifest_name = 'application',
+		$manifest_name = null,
 		$prefix,
 		$registered_files = array(),
 		$options = array();
@@ -53,8 +53,10 @@ class Pipeline
 			throw new \RuntimeException('There is still a Pipeline instance running');
 		self::$current_instance = $this;
 		
-		if ($manifest) //this if is why $this->manifest_name is used for File::__construct() below
+		if ($manifest) // this if is why $this->manifest_name is used for File::__construct() below
 			$this->manifest_name = $manifest;
+		else // make sure we reset manifest_name if it's not specified
+			$this->manifest_name = 'application'
 
 		$this->registered_files[$type] = array();
 
