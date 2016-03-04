@@ -12,7 +12,7 @@ class Pipeline
 
 	private $extensions,
 		$dependencies,
-		$manifest_name = NULL,
+		$manifest_name = 'application',
 		$prefix,
 		$registered_files = array(),
 		$options = array();
@@ -55,8 +55,6 @@ class Pipeline
 		
 		if ($manifest) //this if is why $this->manifest_name is used for File::__construct() below
 			$this->manifest_name = $manifest;
-		else
-			$this->manifest_name = 'application';
 
 		$this->registered_files[$type] = array();
 
