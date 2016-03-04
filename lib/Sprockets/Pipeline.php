@@ -12,7 +12,7 @@ class Pipeline
 
 	private $extensions,
 		$dependencies,
-		$manifest_name = 'application',
+		$manifest_name = NULL,
 		$prefix,
 		$registered_files = array(),
 		$options = array();
@@ -55,6 +55,8 @@ class Pipeline
 		
 		if ($manifest) //this if is why $this->manifest_name is used for File::__construct() below
 			$this->manifest_name = $manifest;
+		else
+			$this->manifest_name = 'application';
 
 		$this->registered_files[$type] = array();
 
@@ -146,6 +148,11 @@ class Pipeline
 	public function getMainFile($type)
 	{
 		return $this->locator->getFile($this->manifest_name, $type);
+	}
+
+	public function getManifestName()
+	{
+		return $this->manifest_name;
 	}
 
 	/**

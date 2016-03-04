@@ -14,14 +14,13 @@ class Cache
 			'cache_directory' => $pipeline->getOption('CACHE_DIRECTORY'),
 			'minify' => false,
 			'manifest' => null,
-			'force' => false
 		), $options);
 	}
 	
 	private function getDependenciesFilename()
 	{
 		return $this->options['cache_directory'] . 'dependencies_' .
-		 $this->pipeline->getPrefix() . '.' . $this->type . '.txt';
+		 $this->pipeline->getPrefix() . $this->pipeline->getManifestName() . '.' . $this->type . '.txt';
 	}
     
 	private function getFilename()
@@ -36,7 +35,6 @@ class Cache
 	private function isFresh()
 	{
 		$cache_directory = $this->options['cache_directory'];
-		$overwrite = (bool) $this->options['force']; 
 	
 		if (!file_exists($cache_directory))
 			mkdir($cache_directory);
@@ -44,7 +42,7 @@ class Cache
 			throw new \InvalidArgumentException(sprintf('Cache directory "%s" is not a valid directory', $cache_directory));
 	
 		$path = $this->getDependenciesFilename();
-		if (!file_exists($path) || $overwrite)
+		if (!file_exists($path))
 			return false;
 		
 		$dependencies_file = file_get_contents($path);
