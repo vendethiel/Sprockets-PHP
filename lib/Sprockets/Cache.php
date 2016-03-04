@@ -14,6 +14,7 @@ class Cache
 			'cache_directory' => $pipeline->getOption('CACHE_DIRECTORY'),
 			'minify' => false,
 			'manifest' => null,
+			'force' => false
 		), $options);
 	}
 	
@@ -35,6 +36,7 @@ class Cache
 	private function isFresh()
 	{
 		$cache_directory = $this->options['cache_directory'];
+		$overwrite = (bool) $this->options['force']; 
 	
 		if (!file_exists($cache_directory))
 			mkdir($cache_directory);
@@ -42,7 +44,7 @@ class Cache
 			throw new \InvalidArgumentException(sprintf('Cache directory "%s" is not a valid directory', $cache_directory));
 	
 		$path = $this->getDependenciesFilename();
-		if (!file_exists($path))
+		if (!file_exists($path) || $overwrite)
 			return false;
 		
 		$dependencies_file = file_get_contents($path);
