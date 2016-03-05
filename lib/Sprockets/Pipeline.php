@@ -150,6 +150,11 @@ class Pipeline
 		return $this->locator->getFile($this->manifest_name, $type);
 	}
 
+	public function getManifestName()
+	{
+		return $this->manifest_name;
+	}
+
 	/**
 	 * if we have multiple filters, the mapping will be overrided
 	 * so that we know last file's name :).

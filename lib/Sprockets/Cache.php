@@ -20,7 +20,7 @@ class Cache
 	private function getDependenciesFilename()
 	{
 		return $this->options['cache_directory'] . 'dependencies_' .
-		 $this->pipeline->getPrefix() . '.' . $this->type . '.txt';
+		 $this->pipeline->getPrefix() . $this->pipeline->getManifestName() . '.' . $this->type . '.txt';
 	}
     
 	private function getFilename()
