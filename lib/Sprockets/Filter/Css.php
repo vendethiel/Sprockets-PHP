@@ -19,8 +19,9 @@ class Css extends Base
 				return 'url(' . $match[1] . ')';
 
 			$file = new File(($dir ? $dir . '/' : '') . $match[1]);
+
 			//XXX maybe we should actually cache the image?
-			return 'url(' . $base_url . $file->getFilepath() . ')';
+			return 'url(' . preg_replace('/(?<!:)\/\//', '/' ,$base_url . $file->getFilepath()) . ')';
 		}, $content);
 	}
 }
