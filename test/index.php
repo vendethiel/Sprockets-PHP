@@ -9,6 +9,9 @@ require __DIR__.'/../vendor/autoload.php';
 $paths = str_replace('%template%', 'MyTemplate', file_get_contents(__DIR__.'/paths.json'));
 $paths = json_decode($paths, true);
 
+# Change one test path to absolute:
+$paths['template']['directories'][0] = __DIR__.'/'.$paths['template']['directories'][0];
+
 class MeowFilter extends Sprockets\Filter\Base
 {
 	public function __invoke($content, $file, $dir, $vars)
