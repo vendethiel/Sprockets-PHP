@@ -11,7 +11,7 @@ class Cache
 		$this->type = $type;
 		$this->vars = $vars;
 		$this->options = array_merge(array(
-			'cache_directory' => $pipeline->getOption('CACHE_DIRECTORY'),
+			'cache_directory' => $pipeline->getCacheDirectory(),
 			'minify' => false,
 			'manifest' => null,
 		), $options);
