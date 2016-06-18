@@ -11,7 +11,7 @@ class Css extends Base
 	const URL_REGEX = '`url\([\'"]?([a-zA-Z0-9/\._-]+)[\'"]?\)`';
 	public function __invoke($content, $file, $dir, $vars)
 	{
-		$base_url = str_repeat('../', substr_count($this->pipeline->getOption('CACHE_DIRECTORY'), '/'));
+		$base_url = str_repeat('../', substr_count($this->pipeline->getCacheDirectory(), '/'));
 
 		return preg_replace_callback(self::URL_REGEX, function ($match) use ($content, $dir, $base_url)
 		{
